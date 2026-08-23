@@ -1,0 +1,42 @@
+# ─── Terraform ────────────────────────────────────────────
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+*.tfplan
+
+# Sensitive variable files (may contain secrets/credentials)
+*.tfvars
+!terraform.tfvars.example
+
+# ─── IDE & OS ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ─── Jenkins ──────────────────────────────────────────────
+*.log
+*.tmp
+
+# ─── Docker ───────────────────────────────────────────────
+docker-compose.override.yml
+
+# ─── Node / Application ──────────────────────────────────
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
