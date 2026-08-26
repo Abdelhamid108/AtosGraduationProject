@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: workload-project
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: "Workload project for PetClinic applications"
+  
+  sourceRepos:
+    - '*'
+  
+  destinations:
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+    - namespace: petclinic-dev
+      server: https://kubernetes.default.svc
+    - namespace: petclinic-test
+      server: https://kubernetes.default.svc
+    - namespace: petclinic-prod
+      server: https://kubernetes.default.svc
+
+      
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+      
+  clusterResourceBlacklist:
+    - group: ''
+      kind: Namespace
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
