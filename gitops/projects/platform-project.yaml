@@ -6,15 +6,35 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  description: "Platform project for infrastructure and cluster operators"
-  
+  description: >-
+    Cluster-wide platform add-ons (AWS Load Balancer Controller, Karpenter,
+    External Secrets Operator, kube-prometheus-stack, Metrics Server).
+    Trusted, cluster-admin-adjacent scope — these apps create CRDs, ClusterRoles,
+    and other cluster-scoped resources that application workloads must not.
+
   sourceRepos:
-    - '*'
-  
+    - "https://github.com/Abdelhamid108/AtosGraduationProject.git"
+    # Upstream charts referenced by the individual add-on Applications:
+    - "https://aws.github.io/eks-charts"
+    - "https://charts.karpenter.sh"
+    - "https://charts.external-secrets.io"
+    - "https://prometheus-community.github.io/helm-charts"
+    - "https://kubernetes-sigs.github.io/metrics-server/"
+
+  # Per the architecture spec: platform add-ons target namespace '*' —
+  # unlike 'workload-project' below, this project is trusted with the
+  # cluster broadly, so destinations aren't enumerated namespace-by-namespace.
   destinations:
-    - namespace: '*'
-      server: https://kubernetes.default.svc
-  
+    - server: "https://kubernetes.default.svc"
+      namespace: "*"
+
+  # Platform add-ons legitimately need CRDs, ClusterRoles, StorageClasses,
+  # Karpenter NodePool/EC2NodeClass, etc. The 'workloads' project does NOT
+  # get this — see workloads-project.yaml.
   clusterResourceWhitelist:
-    - group: '*'
-      kind: '*'
+    - group: "*"
+      kind: "*"
+
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

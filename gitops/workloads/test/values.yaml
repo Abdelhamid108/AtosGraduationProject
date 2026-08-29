@@ -1,1 +1,48 @@
-#values for test environement 
+# Environment-specific overrides for charts/petclinic in 'test'.
+# image.tag here is written by the Jenkins 'promotion' pipeline (dev -> test)
+# via gitops/updateValues.groovy — same convention as dev/values.yaml.
+
+workloadType: Deployment
+
+replicaCount: 2
+
+image:
+  repository: "<REPLACE_ME_ECR_REPO_URI>"
+  tag: "0.0.0-unset"
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  host: "<REPLACE_ME_TEST_DOMAIN>"     # e.g. test.petclinic.example.com
+  certificateArn: "<REPLACE_ME_ACM_CERT_ARN>"
+
+autoscaling:
+  enabled: false
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+persistence:
+  enabled: false
+
+networkPolicy:
+  enabled: true
+
+externalSecret:
+  enabled: true
+  secretStoreRef: aws-secrets-manager
+  dataFrom:
+    - key: "<REPLACE_ME_SECRETS_MANAGER_PATH>/test"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

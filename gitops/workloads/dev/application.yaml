@@ -1,29 +1,27 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: app-workloads-dev
+  name: petclinic-dev
   namespace: argocd
 spec:
   project: workload-project
   sources:
-    - repoURL: 'https://github.com/Abdelhamid108/AtosGraduationProject.git'
-      path: 'charts/petclinic'
+    - repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
       targetRevision: main
+      path: charts/petclinic
       helm:
         releaseName: petclinic-dev
         valueFiles:
           - $values/gitops/workloads/dev/values.yaml
-    - repoURL: 'https://github.com/Abdelhamid108/AtosGraduationProject.git'
+    - repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
       targetRevision: main
       ref: values
-
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: https://kubernetes.default.svc
     namespace: petclinic-dev
-
   syncPolicy:
     automated:
-      selfHeal: true
       prune: true
+      selfHeal: true
     syncOptions:
       - CreateNamespace=true

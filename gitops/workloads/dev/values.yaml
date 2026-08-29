@@ -1,1 +1,49 @@
-#values for dev environement 
+# Environment-specific overrides for charts/petclinic in 'dev'.
+#
+# NOTE: image.tag is rewritten IN-PLACE by the Jenkins app_ci pipeline
+# (JTE gitops/updateValues.groovy, via yq) on every successful build for
+# this environment. Don't reformat/rename this key — the automated update
+# targets .image.tag exactly.
+
+workloadType: Deployment
+
+replicaCount: 1
+
+image:
+  repository: "<REPLACE_ME_ECR_REPO_URI>"   # e.g. <account>.dkr.ecr.<region>.amazonaws.com/petclinic
+  tag: "0.0.0-unset"                          # placeholder — overwritten by CI
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: false   # dev stays internal — reachable via port-forward/kubectl proxy
+
+autoscaling:
+  enabled: false
+
+podDisruptionBudget:
+  enabled: false
+
+persistence:
+  enabled: false
+
+networkPolicy:
+  enabled: true
+
+externalSecret:
+  enabled: true
+  secretStoreRef: aws-secrets-manager
+  # Path convention not finalized yet — see docs/argocd/DESIGN.md "Open Items".
+  dataFrom:
+    - key: "<REPLACE_ME_SECRETS_MANAGER_PATH>/dev"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
