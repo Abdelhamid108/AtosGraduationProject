@@ -1,7 +1,8 @@
 FROM eclipse-temurin:17-jre-alpine
 
-# Install health check dependency and create non-root user
-RUN apk add --no-cache curl tzdata && \
+# Upgrade OS packages to get latest security patches and install dependencies
+RUN apk update && apk upgrade --no-cache && \
+    apk add --no-cache curl tzdata && \
     addgroup -S appgroup -g 1001 && \
     adduser -S appuser -u 1001 -G appgroup
 
