@@ -1,0 +1,51 @@
+# Environment-specific overrides for charts/petclinic in 'prod'.
+# image.tag here is written by the Jenkins 'promotion' pipeline (test -> prod)
+# via gitops/updateValues.groovy — same convention as dev/test.
+
+workloadType: Deployment
+
+replicaCount: 3
+
+image:
+  repository: "<REPLACE_ME_ECR_REPO_URI>"
+  tag: "0.0.0-unset"
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  host: "<REPLACE_ME_PROD_DOMAIN>"     # e.g. petclinic.example.com
+  certificateArn: "<REPLACE_ME_ACM_CERT_ARN>"
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+persistence:
+  enabled: false
+
+networkPolicy:
+  enabled: true
+
+externalSecret:
+  enabled: true
+  secretStoreRef: aws-secrets-manager
+  dataFrom:
+    - key: "<REPLACE_ME_SECRETS_MANAGER_PATH>/prod"
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi

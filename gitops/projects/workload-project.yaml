@@ -1,0 +1,62 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: workload-project
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: >-
+    Application environments (dev, test, prod) deploying charts/petclinic.
+    Zero-trust scope: no cluster-scoped resources permitted — only the
+    namespaced primitives the chart actually needs.
+
+  sourceRepos:
+    - "https://github.com/Abdelhamid108/AtosGraduationProject.git"
+
+  destinations:
+    - server: "https://kubernetes.default.svc"
+      namespace: "petclinic-dev"
+    - server: "https://kubernetes.default.svc"
+      namespace: "petclinic-test"
+    - server: "https://kubernetes.default.svc"
+      namespace: "petclinic-prod"
+    - server: "https://kubernetes.default.svc"
+      namespace: "argocd"   # for the workloads app-of-apps Application object itself
+
+  # Deliberately NOT '*' — matches the chart's actual template list from
+  # charts/petclinic/templates/ in the implementation plan.
+  namespaceResourceWhitelist:
+    - group: "apps"
+      kind: "Deployment"
+    - group: "apps"
+      kind: "StatefulSet"
+    - group: ""
+      kind: "Service"
+    - group: ""
+      kind: "ServiceAccount"
+    - group: ""
+      kind: "ConfigMap"
+    - group: ""
+      kind: "PersistentVolumeClaim"
+    - group: "rbac.authorization.k8s.io"
+      kind: "Role"
+    - group: "rbac.authorization.k8s.io"
+      kind: "RoleBinding"
+    - group: "networking.k8s.io"
+      kind: "NetworkPolicy"
+    - group: "networking.k8s.io"
+      kind: "Ingress"
+    - group: "autoscaling"
+      kind: "HorizontalPodAutoscaler"
+    - group: "policy"
+      kind: "PodDisruptionBudget"
+    - group: "external-secrets.io"
+      kind: "ExternalSecret"
+    - group: "external-secrets.io"
+      kind: "SecretStore"
+    - group: "monitoring.coreos.com"
+      kind: "ServiceMonitor"
+
+  # Zero-trust: workloads never create cluster-scoped resources.
+  clusterResourceWhitelist: []

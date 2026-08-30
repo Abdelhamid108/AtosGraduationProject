@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  # Prevents this Application from being deleted by a stray 'argocd app delete'
+  # sweep — it's the root of everything else.
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # 'default' on purpose: this app creates the 'platform' and 'workloads'
+  # AppProjects themselves, so it can't belong to either of them yet.
+  project: default
+
+  source:
+    repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
+    targetRevision: main
+    path: gitops
+    directory:
+      recurse: true
+      include: "{projects/*.yaml,platform/app-platform.yaml,workloads/app-workloads.yaml}"
+
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: argocd
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

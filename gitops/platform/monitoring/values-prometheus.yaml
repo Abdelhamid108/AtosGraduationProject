@@ -1,0 +1,18 @@
+# Extra values layered onto the upstream kube-prometheus-stack chart.
+# Merged in via the Application's second source (ref: values) using
+# Argo CD's '$values/<path>' convention — see application.yaml.
+
+prometheus:
+  prometheusSpec:
+    # Let ANY ServiceMonitor in ANY namespace be picked up (rather than
+    # only ones carrying the chart's own release label) — needed so
+    # charts/petclinic's own servicemonitor.yaml (for the Actuator
+    # /actuator/prometheus endpoint) is discovered automatically.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+    retention: 15d
+
+grafana:
+  adminPassword: "<REPLACE_ME_GRAFANA_ADMIN_PASSWORD>"   # move to an ExternalSecret before real use
+  defaultDashboardsEnabled: true

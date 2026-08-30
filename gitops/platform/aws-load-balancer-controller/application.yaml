@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aws-load-balancer-controller
+  namespace: argocd
+spec:
+  project: platform-project
+  source:
+    repoURL: https://aws.github.io/eks-charts
+    chart: aws-load-balancer-controller
+    targetRevision: 1.8.1
+    helm:
+      releaseName: aws-load-balancer-controller
+      valuesObject:
+        clusterName: "<REPLACE_ME_CLUSTER_NAME>"
+        region: "<REPLACE_ME_REGION>"
+        vpcId: "<REPLACE_ME_VPC_ID>"
+        serviceAccount:
+          create: true
+          name: aws-load-balancer-controller
+          # No IRSA annotation on purpose — a Pod Identity Association
+          # (created in Terraform) binds this ServiceAccount's
+          # name+namespace to an IAM role directly.
+        replicaCount: 2
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
