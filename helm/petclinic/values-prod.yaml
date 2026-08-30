@@ -1,0 +1,38 @@
+# Production overlay — commit structure only; never commit real secrets here.
+# Supply passwords at deploy time:
+#   helm upgrade --install <release> . -f values-prod.yaml \
+#     --set mysql.auth.password=<strong-password> \
+#     --set mysql.auth.rootPassword=<strong-root-password>
+replicaCount: 3
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: "2"
+    memory: 1Gi
+
+mysql:
+  storage:
+    size: 10Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: petclinic.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  # tls:
+  #   - secretName: petclinic-tls
+  #     hosts:
+  #       - petclinic.example.com

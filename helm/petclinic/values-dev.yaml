@@ -1,0 +1,25 @@
+# Development overlay — safe to commit; uses minimal resources.
+replicaCount: 1
+
+image:
+  tag: "latest"
+  pullPolicy: Always
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 768Mi
+  limits:
+    cpu: 500m
+    memory: 860Mi
+
+mysql:
+  storage:
+    size: 1Gi
+  # resources:
+  #   requests:
+  #     cpu: 50m
+  #     memory: 128Mi
+  #   limits:
+  #     cpu: 250m
+  #     memory: 256Mi

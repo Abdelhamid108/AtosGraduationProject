@@ -1,0 +1,16 @@
+# Internal-only ClusterIP Service for MySQL. Never expose this externally.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "petclinic.mysql.fullname" . }}
+  labels:
+    {{- include "petclinic.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3306
+      targetPort: mysql
+      protocol: TCP
+      name: mysql
+  selector:
+    {{- include "petclinic.mysql.selectorLabels" . | nindent 4 }}
