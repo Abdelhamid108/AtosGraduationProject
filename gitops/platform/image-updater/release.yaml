@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-image-updater
+  namespace: argocd
+spec:
+  project: platform-project
+  source:
+    repoURL: https://argoproj.github.io/argo-helm
+    chart: argocd-image-updater
+    targetRevision: 0.11.0
+    helm:
+      values: |
+        config:
+          registries:
+            - name: ECR
+              api_url: https://069089526123.dkr.ecr.us-east-1.amazonaws.com
+              prefix: 069089526123.dkr.ecr.us-east-1.amazonaws.com
+              ping: yes
+              # ECR helper uses the AWS SDK, which will pick up Pod Identity
+              credentials: ext:/scripts/ecr-login.sh
+        auth:
+          # This maps to the IAM role via EKS Pod Identity
+          serviceAccount:
+            create: true
+            name: argocd-image-updater
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

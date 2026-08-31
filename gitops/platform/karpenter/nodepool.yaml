@@ -44,10 +44,10 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
 spec:
   amiFamily: AL2023
-  role: "<REPLACE_ME_KARPENTER_NODE_ROLE_NAME>"
+  role: "KarpenterNodeRole-atos-eks-cluster"
   subnetSelectorTerms:
     - tags:
-        karpenter.sh/discovery: "<REPLACE_ME_CLUSTER_NAME>"
+        karpenter.sh/discovery: "atos-eks-cluster"
   securityGroupSelectorTerms:
     - tags:
-        karpenter.sh/discovery: "<REPLACE_ME_CLUSTER_NAME>"
+        karpenter.sh/discovery: "atos-eks-cluster"

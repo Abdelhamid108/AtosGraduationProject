@@ -7,8 +7,7 @@ workloadType: Deployment
 replicaCount: 2
 
 image:
-  repository: "<REPLACE_ME_ECR_REPO_URI>"
-  tag: "0.0.0-unset"
+  repository: "069089526123.dkr.ecr.us-east-1.amazonaws.com/atos-petclinic-app"
 
 service:
   type: ClusterIP
@@ -35,9 +34,8 @@ networkPolicy:
 
 externalSecret:
   enabled: true
-  secretStoreRef: aws-secrets-manager
   dataFrom:
-    - key: "<REPLACE_ME_SECRETS_MANAGER_PATH>/test"
+    - key: "atos/petclinic/prod/mysql"
 
 resources:
   requests:

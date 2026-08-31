@@ -13,8 +13,8 @@ spec:
         releaseName: karpenter
         valuesObject:
           settings:
-            clusterName: "<REPLACE_ME_CLUSTER_NAME>"
-            interruptionQueue: "<REPLACE_ME_CLUSTER_NAME>-karpenter"
+            clusterName: "atos-eks-cluster"
+            interruptionQueue: "atos-eks-cluster-karpenter"
           serviceAccount:
             create: true
             name: karpenter
