@@ -64,5 +64,7 @@ spec:
     - group: "monitoring.coreos.com"
       kind: "ServiceMonitor"
 
-  # Zero-trust: workloads never create cluster-scoped resources.
-  clusterResourceWhitelist: []
+  # Allow creating workload namespaces (dev, test, prod) via CreateNamespace=true
+  clusterResourceWhitelist:
+    - group: ""
+      kind: "Namespace"

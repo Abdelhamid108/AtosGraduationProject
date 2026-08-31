@@ -7,6 +7,11 @@ spec:
   project: platform-project
   sources:
     - repoURL: https://charts.karpenter.sh
+      chart: karpenter-crd
+      targetRevision: 1.0.6
+      helm:
+        releaseName: karpenter-crd
+    - repoURL: https://charts.karpenter.sh
       chart: karpenter
       targetRevision: 1.0.6
       helm:
@@ -33,3 +38,4 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - SkipDryRunOnMissingResource=true
