@@ -43,3 +43,5 @@ build/
 
 
 /**/target/**
+*.md
+*.zip

@@ -91,6 +91,7 @@
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
+      <version>42.7.12</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -192,6 +193,11 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.sonarsource.scanner.maven</groupId>
+        <artifactId>sonar-maven-plugin</artifactId>
+        <version>5.7.0.6970</version>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>

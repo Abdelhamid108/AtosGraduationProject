@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: petclinic-dev
+  namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: petclinic=069089526123.dkr.ecr.us-east-1.amazonaws.com/atos-petclinic-app
+    argocd-image-updater.argoproj.io/petclinic.update-strategy: latest
+    argocd-image-updater.argoproj.io/petclinic.allow-tags: regexp:^dev-.*$
+    argocd-image-updater.argoproj.io/petclinic.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/petclinic.helm.image-tag: image.tag
+    argocd-image-updater.argoproj.io/write-back-method: git
+spec:
+  project: workload-project
+  sources:
+    - repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
+      targetRevision: main
+      path: helm/petclinic
+      helm:
+        releaseName: petclinic-dev
+        valueFiles:
+          - $values/gitops/workloads/dev/values.yaml
+    - repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: petclinic-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,54 @@
+# Environment-specific overrides for charts/petclinic in 'dev'.
+#
+# NOTE: image.tag is rewritten IN-PLACE by the Jenkins app_ci pipeline
+# (JTE gitops/updateValues.groovy, via yq) on every successful build for
+# this environment. Don't reformat/rename this key — the automated update
+# targets .image.tag exactly.
+
+workloadType: Deployment
+
+replicaCount: 1
+
+image:
+  repository: "069089526123.dkr.ecr.us-east-1.amazonaws.com/atos-petclinic-app"
+  tag: "0.0.0-unset"
+
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+serviceAccount:
+  create: true
+  name: "petclinic-sa" # This MUST match the name in Terraform's pod_identity.tf
+  automount: true      # Set to true to allow the token for Pod Identity
+
+ingress:
+  enabled: false   # dev stays internal — reachable via port-forward/kubectl proxy
+
+autoscaling:
+  enabled: false
+
+podDisruptionBudget:
+  enabled: false
+
+persistence:
+  enabled: false
+
+networkPolicy:
+  enabled: true
+
+externalSecret:
+  enabled: true
+  secretStoreRef: aws-secrets-manager
+  dataFrom:
+    - key: "atos/petclinic/dev/mysql" # Updated path
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

@@ -1,0 +1,46 @@
+# Environment-specific overrides for charts/petclinic in 'test'.
+# image.tag here is written by the Jenkins 'promotion' pipeline (dev -> test)
+# via gitops/updateValues.groovy — same convention as dev/values.yaml.
+
+workloadType: Deployment
+
+replicaCount: 2
+
+image:
+  repository: "069089526123.dkr.ecr.us-east-1.amazonaws.com/atos-petclinic-app"
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  host: "<REPLACE_ME_TEST_DOMAIN>"     # e.g. test.petclinic.example.com
+  certificateArn: "<REPLACE_ME_ACM_CERT_ARN>"
+
+autoscaling:
+  enabled: false
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+persistence:
+  enabled: false
+
+networkPolicy:
+  enabled: true
+
+externalSecret:
+  enabled: true
+  dataFrom:
+    - key: "atos/petclinic/prod/mysql"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
