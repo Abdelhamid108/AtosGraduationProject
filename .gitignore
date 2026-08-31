@@ -41,5 +41,7 @@ build/
 .env.*
 !.env.example
 
+
+/**/target/**
 *.md
 *.zip

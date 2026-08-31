@@ -15,6 +15,14 @@ serviceAccount:
   annotations: {}
   name: ""
 
+rbac:
+  # Creates a namespace-scoped Role/RoleBinding for the application ServiceAccount.
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources: ["configmaps", "secrets"]
+      verbs: ["get", "list", "watch"]
+
 podAnnotations: {}
 podLabels: {}
 
@@ -62,6 +70,46 @@ autoscaling:
   maxReplicas: 5
   targetCPUUtilizationPercentage: 80
 
+podDisruptionBudget:
+  # Guards against Karpenter/cluster-autoscaler node drains evicting all replicas at once.
+  enabled: true
+  minAvailable: 1
+  # maxUnavailable: 1  # use instead of minAvailable if preferred
+
+serviceMonitor:
+  # Requires the Prometheus Operator CRDs to be installed in the cluster.
+  enabled: false
+  namespace: ""
+  interval: 30s
+  scrapeTimeout: 10s
+  path: /actuator/prometheus
+  labels: {}
+
+networkPolicy:
+  enabled: true
+  # Extra namespaces (e.g. an ingress-controller namespace) allowed to reach the app on service.port.
+  additionalIngressNamespaceLabels: []
+
+externalSecret:
+  # Requires the External Secrets Operator (ESO) CRDs to be installed in the cluster.
+  # When enabled, this chart no longer creates templates/secret.yaml; instead an
+  # ExternalSecret resource syncs mysql-password/mysql-root-password from the
+  # referenced SecretStore/ClusterSecretStore into a Kubernetes Secret.
+  enabled: false
+  refreshInterval: 1h
+  secretStoreRef:
+    name: ""
+    kind: SecretStore
+  data:
+    - secretKey: mysql-password
+      remoteRef:
+        key: petclinic/mysql
+        property: password
+    - secretKey: mysql-root-password
+      remoteRef:
+        key: petclinic/mysql
+        property: rootPassword
+
 nodeSelector: {}
 tolerations: []
 affinity: {}
@@ -79,7 +127,7 @@ mysql:
     existingSecret: ""
   storage:
     size: 1Gi
-    storageClass: ""
+    storageClass: "ebs-gp3"
   resources:
     limits:
       cpu: 500m
