@@ -27,6 +27,8 @@ spec:
   # Deliberately NOT '*' — matches the chart's actual template list from
   # charts/petclinic/templates/ in the implementation plan.
   namespaceResourceWhitelist:
+    - group: "argoproj.io"
+      kind: "Application"
     - group: "apps"
       kind: "Deployment"
     - group: "apps"
@@ -38,6 +40,8 @@ spec:
     - group: ""
       kind: "ConfigMap"
     - group: ""
+      kind: "Secret"
+    - group: ""
       kind: "PersistentVolumeClaim"
     - group: "rbac.authorization.k8s.io"
       kind: "Role"
@@ -47,6 +51,8 @@ spec:
       kind: "NetworkPolicy"
     - group: "networking.k8s.io"
       kind: "Ingress"
+    - group: "gateway.networking.k8s.io"
+      kind: "HTTPRoute"
     - group: "autoscaling"
       kind: "HorizontalPodAutoscaler"
     - group: "policy"
