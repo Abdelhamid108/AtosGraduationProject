@@ -3,12 +3,19 @@ kind: Application
 metadata:
   name: petclinic-dev
   namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: petclinic=069089526123.dkr.ecr.us-east-1.amazonaws.com/atos-petclinic-app
+    argocd-image-updater.argoproj.io/petclinic.update-strategy: latest
+    argocd-image-updater.argoproj.io/petclinic.allow-tags: regexp:^dev-.*$
+    argocd-image-updater.argoproj.io/petclinic.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/petclinic.helm.image-tag: image.tag
+    argocd-image-updater.argoproj.io/write-back-method: git
 spec:
   project: workload-project
   sources:
     - repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
       targetRevision: main
-      path: charts/petclinic
+      path: helm/petclinic
       helm:
         releaseName: petclinic-dev
         valueFiles:

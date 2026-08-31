@@ -3,27 +3,21 @@ kind: Application
 metadata:
   name: root
   namespace: argocd
-  # Prevents this Application from being deleted by a stray 'argocd app delete'
-  # sweep — it's the root of everything else.
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  # 'default' on purpose: this app creates the 'platform' and 'workloads'
-  # AppProjects themselves, so it can't belong to either of them yet.
-  project: default
-
+  project: default # Root must be in 'default' project
   source:
     repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
     targetRevision: main
     path: gitops
     directory:
       recurse: true
+      # This tells the root to ONLY manage the projects and the two manager apps
       include: "{projects/*.yaml,platform/app-platform.yaml,workloads/app-workloads.yaml}"
-
   destination:
     server: "https://kubernetes.default.svc"
     namespace: argocd
-
   syncPolicy:
     automated:
       prune: true

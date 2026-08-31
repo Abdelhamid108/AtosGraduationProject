@@ -1,26 +1,25 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: platform
+  name: platform-apps
   namespace: argocd
 spec:
-  project: platform-project
-
+  project: platform-project # This matches your projects/platform-project.yaml
   source:
     repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
     targetRevision: main
     path: gitops/platform
     directory:
       recurse: true
-      include: "*/application.yaml"
-
+      # Include everything in subdirectories, but skip this file itself
+      include: "**/*.yaml"
+      exclude: "app-platform.yaml"
   destination:
     server: "https://kubernetes.default.svc"
     namespace: argocd
-
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
-    syncOptions:
+      syncOptions:
       - CreateNamespace=true

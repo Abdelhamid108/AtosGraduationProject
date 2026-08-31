@@ -1,32 +1,52 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# One-time cluster bootstrap: installs Argo CD, then applies the single root
-# Application. After this runs once, every other manifest in gitops/ is
-# reconciled by Argo CD itself — never kubectl-applied by hand again.
+# ==============================================================================
+# One-time cluster bootstrap: 
+# 1. Installs Argo CD via Helm
+# 2. Applies the Root Application (App-of-Apps)
+# ==============================================================================
 
-CLUSTER_NAME="${CLUSTER_NAME:-<REPLACE_ME_CLUSTER_NAME>}"   # not provisioned yet — placeholder
-AWS_REGION="${AWS_REGION:-<REPLACE_ME_REGION>}"               # not provisioned yet — placeholder
+# Variables - Update these or export them in your shell
+CLUSTER_NAME="${CLUSTER_NAME:-atos-eks-cluster}"
+AWS_REGION="${AWS_REGION:-us-east-1}"
 ARGOCD_NAMESPACE="argocd"
-ARGOCD_VERSION="${ARGOCD_VERSION:-v2.13.2}"   # pinned deliberately, not 'stable'
+# Helm Chart version for Argo CD (Check https://github.com/argoproj/argo-helm/releases)
+ARGOCD_CHART_VERSION="7.7.1" 
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# 1. Ensure Kubeconfig is current
 echo "==> Configuring kubeconfig for cluster '${CLUSTER_NAME}' in '${AWS_REGION}'"
 aws eks update-kubeconfig --name "${CLUSTER_NAME}" --region "${AWS_REGION}"
 
-echo "==> Creating '${ARGOCD_NAMESPACE}' namespace (idempotent)"
+# 2. Prepare Namespace
+echo "==> Creating '${ARGOCD_NAMESPACE}' namespace"
 kubectl create namespace "${ARGOCD_NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
 
-echo "==> Installing Argo CD ${ARGOCD_VERSION}"
-kubectl apply -n "${ARGOCD_NAMESPACE}" \
-  -f "https://raw.githubusercontent.com/argoproj/argo-cd/${ARGOCD_VERSION}/manifests/install.yaml"
+# 3. Install Argo CD via Helm
+echo "==> Adding Argo Helm Repository"
+helm repo add argo https://argoproj.github.io/argo-helm
+helm repo update
 
-echo "==> Waiting for the Argo CD API server to come up"
-kubectl -n "${ARGOCD_NAMESPACE}" rollout status deployment/argocd-server --timeout=300s
+echo "==> Installing/Upgrading Argo CD (Chart v${ARGOCD_CHART_VERSION})"
+# We install the core Argo CD here. 
+# Note: We do NOT install the Image Updater here because it will be 
+# managed declaratively by the root-application.yaml.
+helm upgrade --install argocd argo/argo-cd \
+  --namespace "${ARGOCD_NAMESPACE}" \
+  --version "${ARGOCD_CHART_VERSION}" \
+  --set server.extraArgs={--insecure} \
+  --wait
 
-echo "==> Applying the root Application (the ONLY manual kubectl apply this project needs)"
+# 4. Apply the Root Application
+echo "==> Applying the root Application (The Seed)"
+# This file triggers: root -> platform-apps -> image-updater & workloads
 kubectl apply -f "${SCRIPT_DIR}/root-application.yaml"
 
-echo "==> Done. Watch reconciliation with:"
-echo "    kubectl -n ${ARGOCD_NAMESPACE} get applications"
+echo "===================================================="
+echo "Bootstrap Complete!"
+echo "==> Argo CD is installing the Platform and Workloads."
+echo "==> To get your initial admin password:"
+echo "    kubectl -n ${ARGOCD_NAMESPACE} get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d; echo"
+echo "===================================================="
