@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://argoproj.github.io/argo-helm
     chart: argocd-image-updater
-    targetRevision: 0.11.0
+    targetRevision: 0.11.0 # Current stable version
     helm:
       values: |
         config:
@@ -17,10 +17,8 @@ spec:
               api_url: https://069089526123.dkr.ecr.us-east-1.amazonaws.com
               prefix: 069089526123.dkr.ecr.us-east-1.amazonaws.com
               ping: yes
-              # ECR helper uses the AWS SDK, which will pick up Pod Identity
-              credentials: ext:/scripts/ecr-login.sh
         auth:
-          # This maps to the IAM role via EKS Pod Identity
+          # This allows the updater to use the IAM Role we created in Terraform
           serviceAccount:
             create: true
             name: argocd-image-updater
