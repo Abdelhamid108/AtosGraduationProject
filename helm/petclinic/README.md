@@ -31,10 +31,15 @@ petclinic/
     ├── _helpers.tpl
     ├── deployment.yaml        # Application Deployment
     ├── service.yaml           # Application ClusterIP Service (port 8080)
-    ├── secret.yaml            # MySQL credentials Secret
+    ├── secret.yaml            # MySQL credentials Secret (skipped if externalSecret.enabled)
+    ├── externalsecret.yaml    # ESO ExternalSecret (disabled by default)
     ├── db-statefulset.yaml    # MySQL StatefulSet
     ├── db-service.yaml        # MySQL internal ClusterIP Service
     ├── serviceaccount.yaml
+    ├── rbac.yaml              # Role + RoleBinding for the app ServiceAccount
+    ├── pdb.yaml               # PodDisruptionBudget (enabled by default)
+    ├── networkpolicy.yaml     # NetworkPolicy: app <-> MySQL + namespace isolation
+    ├── servicemonitor.yaml    # Prometheus Operator ServiceMonitor (disabled by default)
     ├── hpa.yaml               # HorizontalPodAutoscaler (disabled by default)
     ├── ingress.yaml           # Ingress (disabled by default)
     ├── httproute.yaml         # Gateway API HTTPRoute (disabled by default)
@@ -57,8 +62,13 @@ petclinic/
 | `mysql.auth.rootPassword` | `changeme-root` | **Change before production** |
 | `mysql.auth.existingSecret` | `""` | Use a pre-existing Secret instead of creating one |
 | `mysql.storage.size` | `1Gi` | PersistentVolumeClaim size |
-| `mysql.storage.storageClass` | `""` | StorageClass (empty = cluster default) |
+| `mysql.storage.storageClass` | `ebs-gp3` | StorageClass (empty = cluster default) |
 | `ingress.enabled` | `false` | Enable Ingress |
+| `rbac.create` | `true` | Create a namespace-scoped Role/RoleBinding for the app ServiceAccount |
+| `podDisruptionBudget.enabled` | `true` | Create a PDB so Karpenter/node drains cannot evict all replicas at once |
+| `serviceMonitor.enabled` | `false` | Create a Prometheus Operator `ServiceMonitor` scraping `/actuator/prometheus` |
+| `networkPolicy.enabled` | `true` | Restrict traffic to app<->MySQL and same-namespace ingress on `service.port` |
+| `externalSecret.enabled` | `false` | Use External Secrets Operator instead of `secret.yaml` to populate MySQL credentials |
 
 ## Installing the chart
 
@@ -126,7 +136,7 @@ helm install petclinic . \
   --set mysql.auth.rootPassword=<root-password>
 ```
 
-**Option B – External Secret (recommended for production):**
+**Option B – Pre-existing Secret (recommended for production):**
 
 Create the Secret before installing the chart, then tell the chart to use it:
 
@@ -138,6 +148,24 @@ kubectl create secret generic petclinic-mysql \
 helm install petclinic . \
   --set mysql.auth.existingSecret=petclinic-mysql
 ```
+
+**Option C – External Secrets Operator (ESO):**
+
+Requires the [External Secrets Operator](https://external-secrets.io) CRDs and a
+`SecretStore`/`ClusterSecretStore` already configured in the cluster. When
+`externalSecret.enabled=true`, `templates/secret.yaml` is skipped and an
+`ExternalSecret` syncs `mysql-password`/`mysql-root-password` into a Secret named
+like the MySQL StatefulSet:
+
+```bash
+helm install petclinic . \
+  --set externalSecret.enabled=true \
+  --set externalSecret.secretStoreRef.name=<your-secret-store> \
+  --set externalSecret.secretStoreRef.kind=ClusterSecretStore
+```
+
+Customize `externalSecret.data[].remoteRef` to match the keys in your backend
+(e.g. AWS Secrets Manager, Vault).
 
 ## Accessing the application
 
@@ -203,3 +231,16 @@ helm test petclinic
   before starting. The init container uses `nc` from `busybox:1.36`.
 - `terminationGracePeriodSeconds: 60` gives Spring Boot's graceful shutdown
   (30 s timeout) plus extra headroom to finish in-flight requests.
+- `networkPolicy.enabled` (default `true`) restricts MySQL ingress to the app's
+  pods only and confines the app's ingress to the release namespace (plus any
+  namespaces listed in `networkPolicy.additionalIngressNamespaceLabels`, e.g. an
+  ingress-controller namespace). Egress is limited to MySQL and DNS.
+- `podDisruptionBudget.enabled` (default `true`) keeps at least `minAvailable`
+  application pods up during voluntary disruptions such as Karpenter node
+  consolidation/drain.
+- `serviceMonitor.enabled` (default `false`) requires the Prometheus Operator
+  CRDs; enable it to have Prometheus scrape `management.endpoints.web.exposure`'s
+  `/actuator/prometheus` path automatically.
+- `rbac.create` (default `true`) grants the app ServiceAccount read-only access
+  to ConfigMaps/Secrets in its own namespace via `rbac.rules`; adjust or empty
+  the list if the application needs no Kubernetes API access.
