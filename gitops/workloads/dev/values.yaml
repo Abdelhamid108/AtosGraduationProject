@@ -41,9 +41,12 @@ networkPolicy:
 
 externalSecret:
   enabled: true
-  secretStoreRef: aws-secrets-manager
+  secretStoreRef:
+    name: aws-secrets-manager
+    kind: ClusterSecretStore
   dataFrom:
-    - key: "atos/petclinic/dev/mysql" # Updated path
+    - extract:
+        key: "atos/petclinic/dev/mysql"
 
 resources:
   requests:
