@@ -3,25 +3,22 @@ kind: Application
 metadata:
   name: external-secrets
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: platform-project
-  sources:
-    - repoURL: https://charts.external-secrets.io
-      chart: external-secrets
-      targetRevision: 0.10.5
-      helm:
-        releaseName: external-secrets
-        valuesObject:
-          installCRDs: true
-          serviceAccount:
-            create: true
-            name: external-secrets
-            # Pod Identity, not IRSA.
-    - repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
-      targetRevision: main
-      path: gitops/platform/external-secrets
-      directory:
-        include: "cluster-secret-store.yaml"
+  source:
+    repoURL: https://charts.external-secrets.io
+    chart: external-secrets
+    targetRevision: 0.10.5
+    helm:
+      releaseName: external-secrets
+      valuesObject:
+        installCRDs: true
+        serviceAccount:
+          create: true
+          name: external-secrets
+          # Pod Identity, not IRSA.
   destination:
     server: https://kubernetes.default.svc
     namespace: external-secrets
@@ -31,4 +28,29 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - SkipDryRunOnMissingResource=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-secrets-stores
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: platform-project
+  source:
+    repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
+    targetRevision: main
+    path: gitops/platform/external-secrets
+    directory:
+      include: "cluster-secret-store.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: external-secrets
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
       - SkipDryRunOnMissingResource=true

@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: karpenter
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: platform-project
   sources:
@@ -24,11 +26,6 @@ spec:
             create: true
             name: karpenter
             # Pod Identity, not IRSA — same note as the ALB controller.
-    - repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
-      targetRevision: main
-      path: gitops/platform/karpenter
-      directory:
-        include: "nodepool.yaml"
   destination:
     server: https://kubernetes.default.svc
     namespace: karpenter
@@ -38,4 +35,29 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - SkipDryRunOnMissingResource=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: karpenter-nodepools
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: platform-project
+  source:
+    repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
+    targetRevision: main
+    path: gitops/platform/karpenter
+    directory:
+      include: "nodepool.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: karpenter
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
       - SkipDryRunOnMissingResource=true
