@@ -3,9 +3,10 @@ kind: AppProject
 metadata:
   name: platform-project
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
-    - argocd.argoproj.io/sync-wave: "-1"
 spec:
   description: >-
     Cluster-wide platform add-ons (AWS Load Balancer Controller, Karpenter,
