@@ -12,7 +12,7 @@ CLUSTER_NAME="${CLUSTER_NAME:-atos-eks-cluster}"
 AWS_REGION="${AWS_REGION:-us-east-1}"
 ARGOCD_NAMESPACE="argocd"
 # Helm Chart version for Argo CD (Check https://github.com/argoproj/argo-helm/releases)
-ARGOCD_CHART_VERSION="7.7.1" 
+ARGOCD_CHART_VERSION="10.6.0" 
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -42,9 +42,8 @@ helm upgrade --install argocd argo/argo-cd \
   --namespace "${ARGOCD_NAMESPACE}" \
   --version "${ARGOCD_CHART_VERSION}" \
   --set server.extraArgs={--insecure} \
-  --set server.service.type=LoadBalancer \
-  --set server.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-type"=nlb \
-  --wait
+  --set server.service.type=LoadBalancer
+  # No NLB annotation → defaults to Classic ELB (v1), which this account supports.
 
 # 4. Apply the Root Application
 echo "==> Applying the root Application (The Seed)"
@@ -55,24 +54,9 @@ echo "===================================================="
 echo "Bootstrap Complete!"
 echo "==> Argo CD is installing the Platform and Workloads."
 echo ""
-echo "==> Waiting for the ArgoCD LoadBalancer hostname (may take ~60 s)..."
-LB_HOSTNAME=""
-for i in $(seq 1 30); do
-  LB_HOSTNAME=$(kubectl -n "${ARGOCD_NAMESPACE}" get svc argocd-server \
-    -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
-  if [ -n "${LB_HOSTNAME}" ]; then
-    break
-  fi
-  sleep 5
-done
-
-if [ -n "${LB_HOSTNAME}" ]; then
-  echo "==> ArgoCD UI: http://${LB_HOSTNAME}"
-else
-  echo "==> LB hostname not yet assigned. Run this to check later:"
-  echo "    kubectl -n ${ARGOCD_NAMESPACE} get svc argocd-server"
-fi
-
+echo "==> Access the ArgoCD UI via kubectl port-forward:"
+echo "    kubectl port-forward svc/argocd-server -n argocd 8080:80 --address 0.0.0.0 &"
+echo "    Then open http://localhost:8080 (or SSH-tunnel from your local machine)"
 echo ""
 echo "==> To get your initial admin password:"
 echo "    kubectl -n ${ARGOCD_NAMESPACE} get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d; echo"
