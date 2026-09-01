@@ -46,11 +46,7 @@ ingress:
   enabled: false
   className: ""
   annotations: {}
-  hosts:
-    - host: petclinic.local
-      paths:
-        - path: /
-          pathType: Prefix
+  hosts: []
   tls: []
 
 httpRoute:

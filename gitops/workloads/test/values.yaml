@@ -28,6 +28,7 @@ ingress:
     alb.ingress.kubernetes.io/healthy-threshold-count: "2"
     alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
     alb.ingress.kubernetes.io/success-codes: "200,302"
+  hosts: []
 
 autoscaling:
   enabled: false
