@@ -8,11 +8,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  description: >-
-    Cluster-wide platform add-ons (AWS Load Balancer Controller, Karpenter,
-    External Secrets Operator, kube-prometheus-stack, Metrics Server).
-    Trusted, cluster-admin-adjacent scope — these apps create CRDs, ClusterRoles,
-    and other cluster-scoped resources that application workloads must not.
+  description: "Cluster-wide platform add-ons (ALB Controller, Karpenter, ESO, Monitoring, Metrics Server)."
 
   sourceRepos:
     - "https://github.com/Abdelhamid108/AtosGraduationProject.git"

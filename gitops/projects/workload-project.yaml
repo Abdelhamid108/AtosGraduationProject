@@ -6,10 +6,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  description: >-
-    Application environments (dev, test, prod) deploying charts/petclinic.
-    Zero-trust scope: no cluster-scoped resources permitted — only the
-    namespaced primitives the chart actually needs.
+  description: "Application workload environments (dev, test, prod) for Petclinic."
 
   sourceRepos:
     - "https://github.com/Abdelhamid108/AtosGraduationProject.git"
