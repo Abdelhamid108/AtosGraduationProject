@@ -100,15 +100,8 @@ externalSecret:
   secretStoreRef:
     name: ""
     kind: SecretStore
-  data:
-    - secretKey: mysql-password
-      remoteRef:
-        key: petclinic/mysql
-        property: password
-    - secretKey: mysql-root-password
-      remoteRef:
-        key: petclinic/mysql
-        property: rootPassword
+  data: []
+  dataFrom: []
 
 nodeSelector: {}
 tolerations: []

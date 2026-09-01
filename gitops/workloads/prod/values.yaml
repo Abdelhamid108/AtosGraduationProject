@@ -41,6 +41,7 @@ externalSecret:
   secretStoreRef:
     name: aws-secrets-manager
     kind: ClusterSecretStore
+  data: []
   dataFrom:
     - extract:
         key: "atos/petclinic/prod/mysql"
