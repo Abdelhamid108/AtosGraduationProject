@@ -15,16 +15,11 @@ spec:
     - Ingress
     - Egress
   ingress:
-    - from:
-        - podSelector: {}
-        {{- range .Values.networkPolicy.additionalIngressNamespaceLabels }}
-        - namespaceSelector:
-            matchLabels:
-              {{- toYaml . | nindent 14 }}
-        {{- end }}
-      ports:
+    - ports:
         - protocol: TCP
-          port: {{ .Values.service.port }}
+          port: {{ .Values.service.targetPort | default 8080 }}
+        - protocol: TCP
+          port: {{ .Values.service.port | default 80 }}
   egress:
     - to:
         - podSelector:
