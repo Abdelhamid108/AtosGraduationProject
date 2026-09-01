@@ -7,7 +7,8 @@ workloadType: Deployment
 replicaCount: 2
 
 image:
-  repository: "069089526123.dkr.ecr.us-east-1.amazonaws.com/atos-petclinic-app"
+  repository: "069089526123.dkr.ecr.us-east-1.amazonaws.com/petclinic-project/petclinitc-app"
+  tag: "1.0.0"
 
 service:
   type: ClusterIP
