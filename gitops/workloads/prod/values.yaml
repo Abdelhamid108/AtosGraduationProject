@@ -17,8 +17,11 @@ service:
 
 ingress:
   enabled: true
-  host: "<REPLACE_ME_PROD_DOMAIN>"     # e.g. petclinic.example.com
-  certificateArn: "<REPLACE_ME_ACM_CERT_ARN>"
+  className: alb
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
 
 autoscaling:
   enabled: true
