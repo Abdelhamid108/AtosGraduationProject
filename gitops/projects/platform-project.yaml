@@ -19,6 +19,8 @@ spec:
     # Upstream charts referenced by the individual add-on Applications:
     - "https://aws.github.io/eks-charts"
     - "https://charts.karpenter.sh"
+    - "oci://public.ecr.aws/karpenter"
+    - "public.ecr.aws/karpenter"
     - "https://charts.external-secrets.io"
     - "https://prometheus-community.github.io/helm-charts"
     - "https://kubernetes-sigs.github.io/metrics-server/"
