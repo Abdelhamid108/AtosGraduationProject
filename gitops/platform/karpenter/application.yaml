@@ -7,25 +7,20 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
 spec:
   project: platform-project
-  sources:
-    - repoURL: oci://public.ecr.aws/karpenter
-      chart: karpenter-crd
-      targetRevision: 1.14.1
-      helm:
-        releaseName: karpenter-crd
-    - repoURL: oci://public.ecr.aws/karpenter
-      chart: karpenter
-      targetRevision: 1.14.1
-      helm:
-        releaseName: karpenter
-        valuesObject:
-          settings:
-            clusterName: "atos-eks-cluster"
-            interruptionQueue: "atos-eks-cluster-karpenter"
-          serviceAccount:
-            create: true
-            name: karpenter
-            # Pod Identity, not IRSA — same note as the ALB controller.
+  source:
+    repoURL: public.ecr.aws/karpenter
+    chart: karpenter
+    targetRevision: 1.14.1
+    helm:
+      releaseName: karpenter
+      valuesObject:
+        settings:
+          clusterName: "atos-eks-cluster"
+          interruptionQueue: "atos-eks-cluster-karpenter"
+        serviceAccount:
+          create: true
+          name: karpenter
+          # Pod Identity, not IRSA — same note as the ALB controller.
   destination:
     server: https://kubernetes.default.svc
     namespace: karpenter
