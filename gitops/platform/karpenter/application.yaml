@@ -10,12 +10,12 @@ spec:
   sources:
     - repoURL: oci://public.ecr.aws/karpenter
       chart: karpenter-crd
-      targetRevision: 1.0.6
+      targetRevision: 1.14.1
       helm:
         releaseName: karpenter-crd
     - repoURL: oci://public.ecr.aws/karpenter
       chart: karpenter
-      targetRevision: 1.0.6
+      targetRevision: 1.14.1
       helm:
         releaseName: karpenter
         valuesObject:
