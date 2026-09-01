@@ -36,6 +36,9 @@ persistence:
 networkPolicy:
   enabled: true
 
+serviceMonitor:
+  enabled: true
+
 externalSecret:
   enabled: true
   secretStoreRef:
