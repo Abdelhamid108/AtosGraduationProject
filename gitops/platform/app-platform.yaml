@@ -13,9 +13,7 @@ spec:
     path: gitops/platform
     directory:
       recurse: true
-      # Include everything in subdirectories, but skip this file itself
-      include: "**/*.yaml"
-      exclude: "app-platform.yaml"
+      include: "**/application.yaml"
   destination:
     server: "https://kubernetes.default.svc"
     namespace: argocd
