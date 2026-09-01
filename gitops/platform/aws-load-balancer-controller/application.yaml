@@ -14,7 +14,6 @@ spec:
       valuesObject:
         clusterName: "atos-eks-cluster"
         region: "us-east-1"
-        vpcId: "vpc-0b83d9e1179c2e06e"
         serviceAccount:
           create: true
           name: aws-load-balancer-controller
