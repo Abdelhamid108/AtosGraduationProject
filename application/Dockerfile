@@ -1,8 +1,9 @@
 FROM eclipse-temurin:17-jre-alpine
 
 # Upgrade OS packages to get latest security patches and install dependencies
-RUN apk update && apk upgrade --no-cache && \
-    apk add --no-cache curl tzdata && \
+RUN apk update --no-cache && \
+    apk upgrade --no-cache && \
+    apk add --no-cache curl tzdata expat && \
     addgroup -S appgroup -g 1001 && \
     adduser -S appuser -u 1001 -G appgroup
 
