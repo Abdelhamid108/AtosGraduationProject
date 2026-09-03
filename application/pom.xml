@@ -35,6 +35,7 @@
     <maven-checkstyle.version>3.6.0</maven-checkstyle.version>
     <nohttp-checkstyle.version>0.0.11</nohttp-checkstyle.version>
     <spring-format.version>0.0.47</spring-format.version>
+    <tomcat.version>11.0.25</tomcat.version>
   </properties>
 
   <dependencies>
