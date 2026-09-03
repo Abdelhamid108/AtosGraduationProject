@@ -1,0 +1,34 @@
+groups:
+  - name: petclinic-alerts
+    rules:
+      - alert: HighHttpErrorRate
+        expr: |
+          service:http_error_ratio:rate5m > 0.001
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High HTTP error rate"
+          description: "HTTP 5xx error rate is above 0.1% for 10 minutes."
+
+      - alert: AvailabilityBelowSLO
+        expr: |
+          service:http_availability:ratio5m < 0.999
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Availability below SLO"
+          description: "Service availability has been below 99.9% for 10 minutes."
+
+      - alert: HighHttpLatency
+        expr: |
+          service:http_latency:p99_5m > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP latency"
+          description: "HTTP p99 latency is above 1 second."
+
+

@@ -1,0 +1,80 @@
+# database init, supports mysql too
+database: h2
+
+spring:
+  sql:
+    init:
+      schema-locations: classpath*:db/${database}/schema.sql
+      data-locations: classpath*:db/${database}/data.sql
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
+    open-in-view: false
+    properties:
+      hibernate:
+        "[default_batch_fetch_size]": 16
+
+  thymeleaf:
+    mode: HTML
+
+  web:
+    resources:
+      cache:
+        cachecontrol: # Maximum time static resources should be cached
+          max-age: 12h
+
+  messages:
+    basename: messages/messages
+
+  lifecycle: # Give it a max of 30 seconds to finish up (must match your K8s terminationGracePeriodSeconds)
+    timeout-per-shutdown-phase: 30s
+
+server:
+  port: 5000
+  shutdown: graceful
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - prometheus
+          - metrics
+          - threaddump
+          - heapdump
+    health:
+        show-details: always
+        probes:
+        enabled: true
+
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
+      percentiles:
+        '[http.server.requests]': 0.50,0.90,0.95,0.99
+      slo:
+        '[http.server.requests]': 50ms,100ms,200ms,500ms,1s
+    tags:
+      application: petclinic
+      environment: ${SPRING_PROFILES_ACTIVE:default}
+    web:
+      server:
+        request:
+          max-uri-tags: 100  
+# Logging
+logging:
+  level:
+    "[org.springframework]": INFO

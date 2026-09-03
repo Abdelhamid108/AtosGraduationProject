@@ -1,0 +1,131 @@
+groups:
+  - name: spring-boot-sli
+    interval: 30s
+
+    rules:
+
+      # =========================
+      # Traffic
+      # =========================
+      - record: service:http_requests:rate5m
+        expr: |
+          sum(
+            rate(
+              http_server_requests_seconds_count{
+                uri!~"/actuator.*"
+              }[5m]
+            )
+          )
+
+      # =========================
+      # 5xx errors
+      # =========================
+      - record: service:http_errors:rate5m
+        expr: |
+          sum(
+            rate(
+              http_server_requests_seconds_count{
+                uri!~"/actuator.*",
+                status=~"5.."
+              }[5m]
+            )
+          )
+
+      # =========================
+      # Error percentage
+      # =========================
+      - record: service:http_error_ratio:rate5m
+        expr: |
+          (
+            sum(
+              rate(
+                http_server_requests_seconds_count{
+                  uri!~"/actuator.*",
+                  status=~"5.."
+                }[5m]
+              )
+            )
+            /
+            sum(
+              rate(
+                http_server_requests_seconds_count{
+                  uri!~"/actuator.*"
+                }[5m]
+              )
+            )
+          )
+          or vector(0)
+
+      # =========================
+      # Availability
+      # =========================
+      - record: service:http_availability:ratio5m
+        expr: |
+          1 -
+          (
+            sum(
+              rate(
+                http_server_requests_seconds_count{
+                  uri!~"/actuator.*",
+                  status=~"5.."
+                }[5m]
+              )
+            )
+            /
+            sum(
+              rate(
+                http_server_requests_seconds_count{
+                  uri!~"/actuator.*"
+                }[5m]
+              )
+            )
+          )
+          or vector(1)
+
+      # =========================
+      # P50 latency
+      # =========================
+      - record: service:http_latency:p50_5m
+        expr: |
+          histogram_quantile(
+            0.50,
+            sum(
+              rate(
+                http_server_requests_seconds_bucket{
+                  uri!~"/actuator.*"
+                }[5m]
+              )
+            ) by (le)
+          )
+
+      # =========================
+      # P95 latency
+      # =========================
+      - record: service:http_latency:p95_5m
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(
+              rate(
+                http_server_requests_seconds_bucket{
+                  uri!~"/actuator.*"
+                }[5m]
+              )
+            ) by (le)
+          )
+
+      # =========================
+      # P99 latency
+      # =========================
+      - record: service:http_latency:p99_5m
+        expr: |
+          histogram_quantile(
+            0.99,
+            sum(
+              rate(
+                http_server_requests_seconds_bucket{
+                  uri!~"/actuator.*"
+                }[5m]
+              )
+            ) by (le)
+          )
