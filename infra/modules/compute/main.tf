@@ -41,6 +41,13 @@ resource "aws_instance" "bastione" {
               # Install Helm 3
               curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
+	      # install Git
+	      yum install git -y 
+              
+              # clone repo
+
+	      git clone https://github.com/Abdelhamid108/AtosGraduationProject.git /home/ec2-user/AtosGraduationProject
+              
               # Alias for convenience
               echo "alias k=kubectl" >> /home/ec2-user/.bashrc
               echo "alias k=kubectl" >> /root/.bashrc
