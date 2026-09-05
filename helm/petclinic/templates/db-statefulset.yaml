@@ -8,6 +8,9 @@ spec:
   # Single-instance MySQL. Increase only after configuring MySQL replication.
   replicas: 1
   serviceName: {{ include "petclinic.mysql.fullname" . }}
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Retain
   selector:
     matchLabels:
       {{- include "petclinic.mysql.selectorLabels" . | nindent 6 }}

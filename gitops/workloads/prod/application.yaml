@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: petclinic-prod
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
   annotations:
     argocd-image-updater.argoproj.io/image-list: petclinic=069089526123.dkr.ecr.us-east-1.amazonaws.com/petclinic-project/petclinitc-app
     argocd-image-updater.argoproj.io/petclinic.update-strategy: latest
