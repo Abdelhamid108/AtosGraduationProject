@@ -16,6 +16,7 @@ spec:
     helm:
       values: |
         config:
+          logLevel: debug
           registries:
             - name: ECR
               api_url: https://069089526123.dkr.ecr.us-east-1.amazonaws.com
