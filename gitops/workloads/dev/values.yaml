@@ -6,42 +6,30 @@
 # targets .image.tag exactly.
 
 workloadType: Deployment
-
 replicaCount: 1
-
 image:
   repository: "069089526123.dkr.ecr.us-east-1.amazonaws.com/petclinic-project/petclinitc-app"
-  tag: "1.0.0"
-
-
+  tag: "dev-cac4070"
 service:
   type: ClusterIP
   port: 80
   targetPort: 8080
-
 serviceAccount:
   create: true
   name: "petclinic-sa" # This MUST match the name in Terraform's pod_identity.tf
-  automount: true      # Set to true to allow the token for Pod Identity
-
+  automount: true # Set to true to allow the token for Pod Identity
 ingress:
-  enabled: false   # dev stays internal — reachable via port-forward/kubectl proxy
-
+  enabled: false # dev stays internal — reachable via port-forward/kubectl proxy
 autoscaling:
   enabled: false
-
 podDisruptionBudget:
   enabled: false
-
 persistence:
   enabled: false
-
 networkPolicy:
   enabled: true
-
 serviceMonitor:
   enabled: true
-
 externalSecret:
   enabled: true
   secretStoreRef:
@@ -49,9 +37,8 @@ externalSecret:
     kind: ClusterSecretStore
   data: []
   dataFrom:
-    - extract:
-        key: "atos/petclinic/dev/mysql"
-
+  - extract:
+      key: "atos/petclinic/dev/mysql"
 resources:
   requests:
     cpu: 100m
