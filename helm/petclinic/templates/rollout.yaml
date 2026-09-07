@@ -11,6 +11,7 @@ spec:
   {{- end }}
   strategy:
     canary:
+      {{- if .Values.ingress.enabled }}
       # Traffic Routing via AWS Application Load Balancer (ALB)
       trafficRouting:
         alb:
@@ -19,6 +20,7 @@ spec:
           rootPath: /
       stableService: {{ include "petclinic.fullname" . }}
       canaryService: {{ include "petclinic.fullname" . }}-canary
+      {{- end }}
 
       # Automated SLO Analysis Gate via Prometheus
       analysis:
