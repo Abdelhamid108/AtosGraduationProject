@@ -3,18 +3,14 @@
 # via gitops/updateValues.groovy — same convention as dev/test.
 
 workloadType: Deployment
-
 replicaCount: 3
-
 image:
   repository: "069089526123.dkr.ecr.us-east-1.amazonaws.com/petclinic-project/petclinitc-app"
-  tag: "1.0.0"
-
+  tag: "prod-v1.0.6"
 service:
   type: ClusterIP
   port: 80
   targetPort: 8080
-
 ingress:
   enabled: true
   className: alb
@@ -29,26 +25,20 @@ ingress:
     alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
     alb.ingress.kubernetes.io/success-codes: "200,302"
   hosts: []
-
 autoscaling:
   enabled: true
   minReplicas: 3
   maxReplicas: 10
   targetCPUUtilizationPercentage: 70
-
 podDisruptionBudget:
   enabled: true
   minAvailable: 2
-
 persistence:
   enabled: false
-
 networkPolicy:
   enabled: true
-
 serviceMonitor:
   enabled: true
-
 externalSecret:
   enabled: true
   secretStoreRef:
@@ -56,9 +46,8 @@ externalSecret:
     kind: ClusterSecretStore
   data: []
   dataFrom:
-    - extract:
-        key: "atos/petclinic/prod/mysql"
-
+  - extract:
+      key: "atos/petclinic/prod/mysql"
 resources:
   requests:
     cpu: 250m
