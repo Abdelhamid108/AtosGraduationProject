@@ -15,17 +15,15 @@ metadata:
     argocd-image-updater.argoproj.io/write-back-target: helmvalues:gitops/workloads/test/values.yaml
 spec:
   project: workload-project
-  sources:
-    - repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
-      targetRevision: main
-      path: helm/petclinic
-      helm:
-        releaseName: petclinic-test
-        valueFiles:
-          - $values/gitops/workloads/test/values.yaml
-    - repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
-      targetRevision: main
-      ref: values
+  source:
+    repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
+    targetRevision: main
+    path: helm/petclinic
+    helm:
+      releaseName: petclinic-test
+      valueFiles:
+        - ../../gitops/workloads/test/values.yaml
+
   destination:
     server: https://kubernetes.default.svc
     namespace: petclinic-test
