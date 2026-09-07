@@ -12,7 +12,7 @@ metadata:
     argocd-image-updater.argoproj.io/petclinic.helm.image-name: image.repository
     argocd-image-updater.argoproj.io/petclinic.helm.image-tag: image.tag
     argocd-image-updater.argoproj.io/write-back-method: git
-    argocd-image-updater.argoproj.io/petclinic.pull-secret: ext:/scripts/ecr-login.sh
+    argocd-image-updater.argoproj.io/write-back-target: helmvalues:gitops/workloads/test/values.yaml
 spec:
   project: workload-project
   sources:
