@@ -13,3 +13,21 @@ spec:
       name: http
   selector:
     {{- include "petclinic.selectorLabels" . | nindent 4 }}
+{{- if or (and .Values.rollout .Values.rollout.enabled) (eq .Values.workloadType "Rollout") }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "petclinic.fullname" . }}-canary
+  labels:
+    {{- include "petclinic.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "petclinic.selectorLabels" . | nindent 4 }}
+{{- end }}
