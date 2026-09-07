@@ -59,7 +59,6 @@ resources:
     memory: 1Gi
 rollout:
   enabled: true
-
 monitoring:
   prometheusRules:
     enabled: true
