@@ -1,0 +1,80 @@
+{{- if or (and .Values.rollout .Values.rollout.enabled) (eq .Values.workloadType "Rollout") -}}
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "petclinic.fullname" . }}-slo-analysis
+  labels:
+    {{- include "petclinic.labels" . | nindent 4 }}
+spec:
+  metrics:
+    # 1. AVAILABILITY — Global HTTP 5xx Error Rate
+    # Ratio of 5xx errors across all endpoints over a 2-minute sliding window.
+    # Protects the 99.9% SLA (error rate must remain <= 0.1%).
+    - name: error-rate
+      interval: 30s
+      count: 5
+      successCondition: result[0] <= 0.001
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            (
+              sum(rate(http_server_requests_seconds_count{status=~"5..", application="petclinic"}[2m]))
+              /
+              sum(rate(http_server_requests_seconds_count{application="petclinic"}[2m]))
+            ) OR on() vector(0)
+
+    # 2. LATENCY (P95) — Standard User Experience SLO
+
+    # 95% of all HTTP requests must complete in under 500ms.
+    # Leverages the Micrometer histogram enabled in application.properties.
+    - name: p95-latency
+      interval: 30s
+      count: 5
+      successCondition: result[0] <= 0.5
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            histogram_quantile(0.95,
+              sum(rate(http_server_requests_seconds_bucket{application="petclinic"}[2m])) by (le)
+            )
+
+    # ══════════════════════════════════════════════════════════════════════
+    # 3. TAIL LATENCY (P99) — Worst-Case Performance
+    # ══════════════════════════════════════════════════════════════════════
+    # Catches slow DB queries, missing indexes, or thread starvation.
+    # 99% of requests must complete in under 1.0 second.
+    - name: p99-latency
+      interval: 30s
+      count: 5
+      successCondition: result[0] <= 1.0
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            histogram_quantile(0.99,
+              sum(rate(http_server_requests_seconds_bucket{application="petclinic"}[2m])) by (le)
+            )
+
+    # 4. DATABASE SATURATION — HikariCP Connection Pool Exhaustion
+    # Active vs. Maximum DB connections. If pool utilization exceeds 80%,
+    # the new release has a connection leak or holds transactions too long.
+    - name: db-pool-saturation
+      interval: 30s
+      count: 5
+      successCondition: result[0] <= 0.8
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            (
+              sum(hikaricp_connections_active{application="petclinic"})
+              /
+              sum(hikaricp_connections_max{application="petclinic"})
+            ) OR on() vector(0)
+{{- end }}

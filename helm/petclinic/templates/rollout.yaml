@@ -1,6 +1,6 @@
-{{- if not (or (and .Values.rollout .Values.rollout.enabled) (eq .Values.workloadType "Rollout")) -}}
-apiVersion: apps/v1
-kind: Deployment
+{{- if or (and .Values.rollout .Values.rollout.enabled) (eq .Values.workloadType "Rollout") -}}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
   name: {{ include "petclinic.fullname" . }}
   labels:
@@ -9,6 +9,32 @@ spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
+  strategy:
+    canary:
+      # Traffic Routing via AWS Application Load Balancer (ALB)
+      trafficRouting:
+        alb:
+          ingress: {{ include "petclinic.fullname" . }}
+          servicePort: {{ .Values.service.port }}
+          rootPath: /
+      stableService: {{ include "petclinic.fullname" . }}
+      canaryService: {{ include "petclinic.fullname" . }}-canary
+
+      # Automated SLO Analysis Gate via Prometheus
+      analysis:
+        templates:
+          - templateName: {{ include "petclinic.fullname" . }}-slo-analysis
+        args: []
+
+      # Progressive Traffic Shaping Steps
+      steps:
+        - setWeight: 10
+        - pause: { duration: 5m }
+        - setWeight: 25
+        - pause: { duration: 10m }
+        - setWeight: 50
+        - pause: { duration: 20m }
+
   selector:
     matchLabels:
       {{- include "petclinic.selectorLabels" . | nindent 6 }}
@@ -68,8 +94,6 @@ spec:
                 secretKeyRef:
                   name: {{ include "petclinic.mysql.secretName" . }}
                   key: mysql-password
-          # Spring Boot Actuator exposes Kubernetes-specific probes when
-          # management.endpoint.health.probes.enabled=true (set in application.properties).
           startupProbe:
             httpGet:
               path: /actuator/health/liveness
@@ -92,13 +116,10 @@ spec:
             failureThreshold: 3
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          # Give in-flight requests time to complete before the container exits
-          # (complements server.shutdown=graceful in application.properties).
           lifecycle:
             preStop:
               exec:
                 command: ["/bin/sh", "-c", "sleep 5"]
-      # Must be longer than spring.lifecycle.timeout-per-shutdown-phase (30s) + preStop sleep.
       terminationGracePeriodSeconds: 60
       {{- with .Values.nodeSelector }}
       nodeSelector:

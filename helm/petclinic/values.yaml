@@ -1,3 +1,8 @@
+workloadType: Deployment
+
+rollout:
+  enabled: false
+
 replicaCount: 1
 
 image:
