@@ -30,8 +30,9 @@ data:
           "id": 10,
           "targets": [
             {
-              "expr": "service:http_sla_compliance:ratio30d{namespace=~\"$namespace\"} * 100",
-              "legendFormat": "Current 30d SLA"
+              "expr": "min(service:http_sla_compliance:ratio30d{namespace=~\"$namespace\"}) * 100",
+              "legendFormat": "Current 30d SLA",
+              "instant": true
             }
           ],
           "fieldConfig": {
@@ -57,8 +58,9 @@ data:
           "id": 11,
           "targets": [
             {
-              "expr": "service:http_error_budget_remaining:percent{namespace=~\"$namespace\"}",
-              "legendFormat": "Remaining Budget"
+              "expr": "min(service:http_error_budget_remaining:percent{namespace=~\"$namespace\"})",
+              "legendFormat": "Remaining Budget",
+              "instant": true
             }
           ],
           "fieldConfig": {
@@ -84,8 +86,9 @@ data:
           "id": 12,
           "targets": [
             {
-              "expr": "service:http_error_budget_minutes_remaining{namespace=~\"$namespace\"}",
-              "legendFormat": "Minutes Left (of 43.2 min)"
+              "expr": "min(service:http_error_budget_minutes_remaining{namespace=~\"$namespace\"})",
+              "legendFormat": "Minutes Left (of 43.2 min)",
+              "instant": true
             }
           ],
           "fieldConfig": {
@@ -109,7 +112,7 @@ data:
           "id": 13,
           "targets": [
             {
-              "expr": "service:http_error_budget_remaining:percent{namespace=~\"$namespace\"}",
+              "expr": "min by (namespace) (service:http_error_budget_remaining:percent{namespace=~\"$namespace\"})",
               "legendFormat": "Actual Remaining Error Budget %"
             }
           ],
@@ -124,11 +127,11 @@ data:
           "id": 14,
           "targets": [
             {
-              "expr": "service:http_availability:burn_rate1h{namespace=~\"$namespace\"}",
+              "expr": "max by (namespace) (service:http_availability:burn_rate1h{namespace=~\"$namespace\"})",
               "legendFormat": "1h Burn Rate (Critical: >14.4x)"
             },
             {
-              "expr": "service:http_availability:burn_rate6h{namespace=~\"$namespace\"}",
+              "expr": "max by (namespace) (service:http_availability:burn_rate6h{namespace=~\"$namespace\"})",
               "legendFormat": "6h Burn Rate (Warning: >6.0x)"
             }
           ],
@@ -168,7 +171,7 @@ data:
           }
         ]
       },
-      "time": { "from": "now-30d", "to": "now" },
+      "time": { "from": "now-1h", "to": "now" },
       "title": "PetClinic / 99.9% SLO & Error Budget",
       "uid": "petclinic-slo-error-budget"
     }
