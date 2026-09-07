@@ -10,5 +10,5 @@ output "bastion_security_group_id" {
 
 output "ssm_connect_command" {
   description = "AWS CLI command to connect to the Bastion host via SSM"
-  value       = "aws ssm start-session --target ${aws_instance.bastione.id}"
+  value       = "aws ssm start-session --target ${aws_instance.bastione.id} --region=${var.aws_region}"
 }
