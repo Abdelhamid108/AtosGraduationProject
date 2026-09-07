@@ -35,16 +35,3 @@ if [[ "${1:-}" == "--all" ]]; then
   kubectl delete namespace "${ARGOCD_NAMESPACE}" --ignore-not-found || true
 fi
 
-echo "===================================================="
-echo "Teardown Complete!"
-echo "==> Checking for remaining AWS resources:"
-echo -n "    Load Balancers: "
-aws elbv2 describe-load-balancers --region "${AWS_REGION}" \
-  --query "LoadBalancers[?contains(DNSName, '${CLUSTER_NAME}') || contains(LoadBalancerName, 'k8s-') || contains(LoadBalancerName, 'petclinic')].LoadBalancerName" \
-  --output text || true
-echo -n "    PVC Volumes:    "
-aws ec2 describe-volumes --region "${AWS_REGION}" \
-  --filters "Name=status,Values=available,in-use" "Name=tag-key,Values=kubernetes.io/created-for/pvc/name" \
-  --query "Volumes[*].VolumeId" \
-  --output text || true
-echo "===================================================="
