@@ -16,6 +16,7 @@ spec:
     helm:
       values: |
         config:
+          git.commit-message-template: "build: update {{ .AppName }} image [skip ci]"
           registries:
             - name: ECR
               api_url: https://069089526123.dkr.ecr.us-east-1.amazonaws.com
@@ -61,7 +62,7 @@ spec:
     targetRevision: main
     path: gitops/platform/image-updater
     directory:
-      include: "image-updater-cr.yaml"
+      include: "{image-updater-cr.yaml,git-creds-secret.yaml}"
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
