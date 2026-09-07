@@ -19,8 +19,8 @@ spec:
         - alias: petclinic
           imageName: 069089526123.dkr.ecr.us-east-1.amazonaws.com/petclinic-project/petclinitc-app:1.0.0
           commonUpdateSettings:
-            updateStrategy: latest
-            allowTags: "^dev-.*$"
+            updateStrategy: newest-build
+            allowTags: "regexp:^dev-.*$"
             forceUpdate: true
           manifestTargets:
             helm:
@@ -37,8 +37,8 @@ spec:
         - alias: petclinic
           imageName: 069089526123.dkr.ecr.us-east-1.amazonaws.com/petclinic-project/petclinitc-app:1.0.0
           commonUpdateSettings:
-            updateStrategy: latest
-            allowTags: "^test-.*$"
+            updateStrategy: newest-build
+            allowTags: "regexp:^test-.*$"
             forceUpdate: true
           manifestTargets:
             helm:
@@ -55,8 +55,8 @@ spec:
         - alias: petclinic
           imageName: 069089526123.dkr.ecr.us-east-1.amazonaws.com/petclinic-project/petclinitc-app:1.0.0
           commonUpdateSettings:
-            updateStrategy: latest
-            allowTags: "^prod-.*$"
+            updateStrategy: newest-build
+            allowTags: "regexp:^prod-.*$"
             forceUpdate: true
           manifestTargets:
             helm:
