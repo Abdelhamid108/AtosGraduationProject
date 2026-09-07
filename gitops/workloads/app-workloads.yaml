@@ -16,7 +16,7 @@ spec:
     path: gitops/workloads
     directory:
       recurse: true
-      include: "*/application.yaml"
+      include: "{namespaces.yaml,*/application.yaml}"
 
   destination:
     server: "https://kubernetes.default.svc"

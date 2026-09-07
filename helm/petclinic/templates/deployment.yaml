@@ -1,3 +1,4 @@
+{{- if not (or (and .Values.rollout .Values.rollout.enabled) (eq .Values.workloadType "Rollout")) -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -111,4 +112,4 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-
+{{- end }}

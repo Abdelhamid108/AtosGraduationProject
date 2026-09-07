@@ -26,6 +26,10 @@ spec:
   namespaceResourceWhitelist:
     - group: "argoproj.io"
       kind: "Application"
+    - group: "argoproj.io"
+      kind: "Rollout"
+    - group: "argoproj.io"
+      kind: "AnalysisTemplate"
     - group: "apps"
       kind: "Deployment"
     - group: "apps"

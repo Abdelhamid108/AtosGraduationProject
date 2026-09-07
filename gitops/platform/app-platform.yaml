@@ -5,6 +5,8 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: platform-project # This matches your projects/platform-project.yaml
   source:
@@ -21,5 +23,5 @@ spec:
     automated:
       prune: true
       selfHeal: true
-      syncOptions:
+    syncOptions:
       - CreateNamespace=true

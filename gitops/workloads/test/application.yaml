@@ -3,26 +3,27 @@ kind: Application
 metadata:
   name: petclinic-test
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd-image-updater.argoproj.io/image-list: petclinic=069089526123.dkr.ecr.us-east-1.amazonaws.com/atos-petclinic-app
+    argocd-image-updater.argoproj.io/image-list: petclinic=069089526123.dkr.ecr.us-east-1.amazonaws.com/petclinic-project/petclinitc-app
     argocd-image-updater.argoproj.io/petclinic.update-strategy: latest
     argocd-image-updater.argoproj.io/petclinic.allow-tags: regexp:^test-.*$
     argocd-image-updater.argoproj.io/petclinic.helm.image-name: image.repository
     argocd-image-updater.argoproj.io/petclinic.helm.image-tag: image.tag
     argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/write-back-target: helmvalues:gitops/workloads/test/values.yaml
 spec:
   project: workload-project
-  sources:
-    - repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
-      targetRevision: main
-      path: helm/petclinic
-      helm:
-        releaseName: petclinic-test
-        valueFiles:
-          - $values/gitops/workloads/test/values.yaml
-    - repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
-      targetRevision: main
-      ref: values
+  source:
+    repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
+    targetRevision: main
+    path: helm/petclinic
+    helm:
+      releaseName: petclinic-test
+      valueFiles:
+        - ../../gitops/workloads/test/values.yaml
+
   destination:
     server: https://kubernetes.default.svc
     namespace: petclinic-test

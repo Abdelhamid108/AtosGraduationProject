@@ -5,25 +5,36 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: platform-project
   source:
     repoURL: https://argoproj.github.io/argo-helm
     chart: argocd-image-updater
-    targetRevision: 0.11.0 # Current stable version
+    targetRevision: 1.3.1
     helm:
       values: |
         config:
+          git.commit-message-template: "build: update {{ .AppName }} image [skip ci]"
           registries:
             - name: ECR
               api_url: https://069089526123.dkr.ecr.us-east-1.amazonaws.com
               prefix: 069089526123.dkr.ecr.us-east-1.amazonaws.com
               ping: yes
-        auth:
-          # This allows the updater to use the IAM Role we created in Terraform
-          serviceAccount:
-            create: true
-            name: argocd-image-updater
+              credentials: ext:/scripts/ecr-login.sh
+              credsexpire: 10h
+        authScripts:
+          enabled: true
+          scripts:
+            ecr-login.sh: |
+              #!/bin/sh
+              set -e
+              TOKEN=$(aws ecr get-login-password --region us-east-1)
+              echo "AWS:$TOKEN"
+        serviceAccount:
+          create: true
+          name: argocd-image-updater
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
@@ -31,3 +42,33 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - SkipDryRunOnMissingResource=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-image-updater-config
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform-project
+  source:
+    repoURL: "https://github.com/Abdelhamid108/AtosGraduationProject.git"
+    targetRevision: main
+    path: gitops/platform/image-updater
+    directory:
+      include: "{image-updater-cr.yaml,git-creds-secret.yaml}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - SkipDryRunOnMissingResource=true

@@ -1,0 +1,66 @@
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: petclinic-image-updater
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  writeBackConfig:
+    method: git
+    gitConfig:
+      branch: main
+  applicationRefs:
+    - namePattern: petclinic-dev
+      writeBackConfig:
+        method: git
+        gitConfig:
+          branch: main
+          writeBackTarget: "helmvalues:../../gitops/workloads/dev/values.yaml"
+      images:
+        - alias: petclinic
+          imageName: 069089526123.dkr.ecr.us-east-1.amazonaws.com/petclinic-project/petclinitc-app:1.0.0
+          commonUpdateSettings:
+            updateStrategy: newest-build
+            allowTags: "regexp:^dev-.*$"
+            forceUpdate: true
+          manifestTargets:
+            helm:
+              name: image.repository
+              tag: image.tag
+
+    - namePattern: petclinic-test
+      writeBackConfig:
+        method: git
+        gitConfig:
+          branch: main
+          writeBackTarget: "helmvalues:../../gitops/workloads/test/values.yaml"
+      images:
+        - alias: petclinic
+          imageName: 069089526123.dkr.ecr.us-east-1.amazonaws.com/petclinic-project/petclinitc-app:1.0.0
+          commonUpdateSettings:
+            updateStrategy: newest-build
+            allowTags: "regexp:^test-.*$"
+            forceUpdate: true
+          manifestTargets:
+            helm:
+              name: image.repository
+              tag: image.tag
+
+    - namePattern: petclinic-prod
+      writeBackConfig:
+        method: git
+        gitConfig:
+          branch: main
+          writeBackTarget: "helmvalues:../../gitops/workloads/prod/values.yaml"
+      images:
+        - alias: petclinic
+          imageName: 069089526123.dkr.ecr.us-east-1.amazonaws.com/petclinic-project/petclinitc-app:1.0.0
+          commonUpdateSettings:
+            updateStrategy: newest-build
+            allowTags: "regexp:^prod-v.*$"
+            forceUpdate: true
+          manifestTargets:
+            helm:
+              name: image.repository
+              tag: image.tag

@@ -7,8 +7,13 @@ metadata:
     {{- include "petclinic.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
+    {{- if or (and .Values.rollout .Values.rollout.enabled) (eq .Values.workloadType "Rollout") }}
+    apiVersion: argoproj.io/v1alpha1
+    kind: Rollout
+    {{- else }}
     apiVersion: apps/v1
     kind: Deployment
+    {{- end }}
     name: {{ include "petclinic.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
