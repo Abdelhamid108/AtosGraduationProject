@@ -85,23 +85,15 @@ serviceMonitor:
 monitoring:
   prometheusRules:
     enabled: true
-  grafanaDashboard:
-    enabled: true
-    labels:
-      grafana_dashboard: "1"
+  alerts:
+    enabled: false
   slo:
     availabilityTarget: 0.999
     errorBudgetRatio: 0.001
+    latencyP95Seconds: 0.5
     latencyP99Seconds: 1
     fastBurnRateThreshold: 14.4
     slowBurnRateThreshold: 6
-  alerts:
-    httpErrorRatioThreshold: 0.001
-    availabilityThreshold: 0.999
-    containerRestartThreshold: 3
-    nodeCpuPercent: 85
-    nodeMemoryPercent: 85
-    containerMemoryLimitRatio: 0.9
 
 kube-prometheus-stack:
   # Keep the dependency available for standalone installs, but leave it disabled

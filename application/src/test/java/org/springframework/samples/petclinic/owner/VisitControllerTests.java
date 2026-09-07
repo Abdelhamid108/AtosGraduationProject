@@ -41,6 +41,8 @@ import java.util.Optional;
  * @author Colin But
  * @author Wick Dynex
  */
+import io.micrometer.core.instrument.Counter;
+
 @WebMvcTest(VisitController.class)
 @DisabledInNativeImage
 @DisabledInAotMode
@@ -55,6 +57,9 @@ class VisitControllerTests {
 
 	@MockitoBean
 	private OwnerRepository owners;
+
+	@MockitoBean
+	private Counter visitCreationCounter;
 
 	@BeforeEach
 	void init() {

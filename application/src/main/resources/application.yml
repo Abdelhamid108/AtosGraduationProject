@@ -36,7 +36,7 @@ server:
   port: ${SERVER_PORT:8080}
   shutdown: graceful
 
-# Actuator
+# Actuator & Observability
 management:
   endpoints:
     web:
@@ -45,6 +45,10 @@ management:
           - health
           - info
           - prometheus
+          - metrics
+          - threaddump
+          - heapdump
+  endpoint:
     health:
       show-details: always
       probes:

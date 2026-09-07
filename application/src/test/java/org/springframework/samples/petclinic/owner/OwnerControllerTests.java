@@ -57,6 +57,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author Colin But
  * @author Wick Dynex
  */
+import io.micrometer.core.instrument.Counter;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
 @WebMvcTest(OwnerController.class)
 @DisabledInNativeImage
 @DisabledInAotMode
@@ -69,6 +72,9 @@ class OwnerControllerTests {
 
 	@MockitoBean
 	private OwnerRepository owners;
+
+	@MockitoBean
+	private Counter ownerCreationCounter;
 
 	private Owner george() {
 		Owner george = new Owner();

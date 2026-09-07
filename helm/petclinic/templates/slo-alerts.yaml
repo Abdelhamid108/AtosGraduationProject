@@ -1,71 +1,90 @@
-{{- if .Values.monitoring.prometheusRules.enabled }}
+{{- if and .Values.monitoring.prometheusRules.enabled .Values.monitoring.alerts.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ include "petclinic.fullname" . }}-application-alerts
+  name: {{ include "petclinic.fullname" . }}-slo-alerts
   labels:
     {{- include "petclinic.labels" . | nindent 4 }}
 spec:
   groups:
-    - name: {{ include "petclinic.fullname" . }}.application-alerts
+    - name: {{ include "petclinic.fullname" . }}.slo-alerts
       rules:
-        - alert: HighHttpErrorRate
-          expr: service:http_error_ratio:rate5m{namespace="{{ .Release.Namespace }}"} > {{ .Values.monitoring.alerts.httpErrorRatioThreshold }}
-          for: 10m
+        # Multi-window, multi-burn SLO alerting follows Google SRE standard.
+        # Fast burn pages critical when both the short (5m) and long (1h) windows exceed 14.4x.
+        - alert: PetClinicAvailabilityFastBurn
+          expr: |
+            service:http_availability:burn_rate5m{namespace="{{ .Release.Namespace }}"} > {{ .Values.monitoring.slo.fastBurnRateThreshold }}
+            and on (namespace, service)
+            service:http_availability:burn_rate1h{namespace="{{ .Release.Namespace }}"} > {{ .Values.monitoring.slo.fastBurnRateThreshold }}
+          for: 2m
           labels:
             severity: critical
             service: {{ include "petclinic.name" . }}
             slo: availability
           annotations:
-            summary: High HTTP error rate for {{ include "petclinic.fullname" . }}
-            description: HTTP 5xx error ratio is above {{ .Values.monitoring.alerts.httpErrorRatioThreshold }} for 10 minutes.
-        - alert: AvailabilityBelowSLO
-          expr: service:http_availability:ratio5m{namespace="{{ .Release.Namespace }}"} < {{ .Values.monitoring.alerts.availabilityThreshold }}
-          for: 10m
+            summary: "Critical 99.9% Error Budget Fast Burn for {{ include "petclinic.fullname" . }}"
+            description: "High error rate (Burn Rate > {{ .Values.monitoring.slo.fastBurnRateThreshold }}x). 2% of the monthly error budget consumed in the last hour. Immediate on-call engagement required."
+
+        # Slow burn uses wider 30m and 6h windows with a lower threshold to catch sustained budget drain.
+        - alert: PetClinicAvailabilitySlowBurn
+          expr: |
+            service:http_availability:burn_rate30m{namespace="{{ .Release.Namespace }}"} > {{ .Values.monitoring.slo.slowBurnRateThreshold }}
+            and on (namespace, service)
+            service:http_availability:burn_rate6h{namespace="{{ .Release.Namespace }}"} > {{ .Values.monitoring.slo.slowBurnRateThreshold }}
+          for: 15m
           labels:
-            severity: critical
+            severity: warning
             service: {{ include "petclinic.name" . }}
             slo: availability
           annotations:
-            summary: Availability below SLO for {{ include "petclinic.fullname" . }}
-            description: Availability has been below {{ .Values.monitoring.alerts.availabilityThreshold }} for 10 minutes.
-        - alert: HighHttpLatency
-          expr: service:http_latency:p99_5m{namespace="{{ .Release.Namespace }}"} > {{ .Values.monitoring.slo.latencyP99Seconds }}
-          for: 10m
+            summary: "Warning 99.9% Error Budget Slow Burn for {{ include "petclinic.fullname" . }}"
+            description: "Sustained error rate (Burn Rate > {{ .Values.monitoring.slo.slowBurnRateThreshold }}x). 5% of monthly error budget consumed in 6 hours. Investigate root causes before budget depletes."
+
+        # Latency SLO Warning
+        - alert: PetClinicHighHttpLatency
+          expr: service:http_latency:p95_5m{namespace="{{ .Release.Namespace }}"} > {{ .Values.monitoring.slo.latencyP95Seconds | default 0.5 }}
+          for: 5m
           labels:
             severity: warning
             service: {{ include "petclinic.name" . }}
             slo: latency
           annotations:
-            summary: High p99 latency for {{ include "petclinic.fullname" . }}
-            description: HTTP p99 latency is above {{ .Values.monitoring.slo.latencyP99Seconds }} second(s) for 10 minutes.
-        # Multi-window, multi-burn SLO alerting follows the Google SRE workbook pattern.
-        # Fast burn pages only when both the short and long windows exceed 14.4x.
-        - alert: AvailabilityFastBurn
-          expr: |
-            service:http_availability:burn_rate5m{namespace="{{ .Release.Namespace }}"} > {{ .Values.monitoring.slo.fastBurnRateThreshold }}
-            and on (namespace, service)
-            service:http_availability:burn_rate1h{namespace="{{ .Release.Namespace }}"} > {{ .Values.monitoring.slo.fastBurnRateThreshold }}
-          for: 5m
+            summary: "High P95 Latency for {{ include "petclinic.fullname" . }}"
+            description: "HTTP P95 latency is above {{ .Values.monitoring.slo.latencyP95Seconds | default 0.5 }}s for 5 minutes."
+
+        # Complete Service Outage (Synthetic / Probe Availability)
+        - alert: PetClinicServiceDown
+          expr: avg by (namespace) (up{job=~".*petclinic.*", namespace="{{ .Release.Namespace }}"}) == 0
+          for: 1m
           labels:
             severity: critical
             service: {{ include "petclinic.name" . }}
-            slo: availability
+            tier: infrastructure
           annotations:
-            summary: Fast availability error-budget burn for {{ include "petclinic.fullname" . }}
-            description: 5m and 1h burn rates are both above {{ .Values.monitoring.slo.fastBurnRateThreshold }}x.
-        # Slow burn uses wider 30m and 6h windows with a lower threshold to catch sustained budget drain.
-        - alert: AvailabilitySlowBurn
-          expr: |
-            service:http_availability:burn_rate30m{namespace="{{ .Release.Namespace }}"} > {{ .Values.monitoring.slo.slowBurnRateThreshold }}
-            and on (namespace, service)
-            service:http_availability:burn_rate6h{namespace="{{ .Release.Namespace }}"} > {{ .Values.monitoring.slo.slowBurnRateThreshold }}
-          for: 30m
+            summary: "PetClinic Service Completely Down in {{ .Release.Namespace }}"
+            description: "No healthy PetClinic pods are responding to Prometheus scrapes. The application is completely unreachable."
+
+        # Database Connection Pool Saturation
+        - alert: PetClinicHikariCPPoolStarvation
+          expr: sum by (namespace) (hikaricp_connections_pending{namespace="{{ .Release.Namespace }}"}) > 0
+          for: 2m
+          labels:
+            severity: critical
+            service: {{ include "petclinic.name" . }}
+            tier: database
+          annotations:
+            summary: "HikariCP Database Connection Pool Exhausted for {{ include "petclinic.fullname" . }}"
+            description: "Threads are actively queuing for database connections for over 2 minutes."
+
+        # JVM Heap Memory Saturation (> 90% for 5m)
+        - alert: PetClinicJVMHeapNearOOM
+          expr: service:jvm_heap_utilization:ratio{namespace="{{ .Release.Namespace }}"} > 0.90
+          for: 5m
           labels:
             severity: warning
             service: {{ include "petclinic.name" . }}
-            slo: availability
+            tier: application
           annotations:
-            summary: Slow availability error-budget burn for {{ include "petclinic.fullname" . }}
-            description: 30m and 6h burn rates are both above {{ .Values.monitoring.slo.slowBurnRateThreshold }}x.
+            summary: "JVM Heap Memory Saturation (> 90%) for {{ include "petclinic.fullname" . }}"
+            description: "JVM Heap usage is above 90% for 5 minutes, risking an Out-Of-Memory container termination."
 {{- end }}

@@ -33,7 +33,7 @@ spec:
             /
             clamp_min(
               sum by (namespace, service) (
-                rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[1h])
+                rate(http_server_requests_seconds_count{uri!~"/actuator.*"[1h])
               ),
               0.000001
             )
@@ -111,4 +111,43 @@ spec:
                 rate(http_server_requests_seconds_bucket{uri!~"/actuator.*"}[5m])
               )
             )
+        # 30-Day Rolling Availability (Primary Demonstration of 99.9% SLA)
+        - record: service:http_sla_compliance:ratio30d
+          expr: |
+            1 - (
+              sum by (namespace, service) (increase(http_server_requests_seconds_count{uri!~"/actuator.*", status=~"5.."}[30d]))
+              /
+              clamp_min(sum by (namespace, service) (increase(http_server_requests_seconds_count{uri!~"/actuator.*"}[30d])), 1)
+            )
+        # Remaining Error Budget Percentage (Target = 0.001 error rate allowance)
+        - record: service:http_error_budget_remaining:percent
+          expr: |
+            clamp_min(
+              (
+                1 - (
+                  (
+                    sum by (namespace, service) (increase(http_server_requests_seconds_count{uri!~"/actuator.*", status=~"5.."}[30d]))
+                    /
+                    clamp_min(sum by (namespace, service) (increase(http_server_requests_seconds_count{uri!~"/actuator.*"}[30d])), 1)
+                  )
+                  / {{ .Values.monitoring.slo.errorBudgetRatio }}
+                )
+              ) * 100,
+              0
+            )
+        # Remaining Error Budget Minutes (Out of 43.2 allowable minutes per 30 days)
+        - record: service:http_error_budget_minutes_remaining
+          expr: |
+            (service:http_error_budget_remaining:percent / 100) * 43.2
+        # Saturation Signals
+        - record: service:db_pool_utilization:ratio
+          expr: |
+            sum by (namespace) (hikaricp_connections_active)
+            /
+            clamp_min(sum by (namespace) (hikaricp_connections_max), 1)
+        - record: service:jvm_heap_utilization:ratio
+          expr: |
+            sum by (namespace) (jvm_memory_used_bytes{area="heap"})
+            /
+            clamp_min(sum by (namespace) (jvm_memory_max_bytes{area="heap"}), 1)
 {{- end }}

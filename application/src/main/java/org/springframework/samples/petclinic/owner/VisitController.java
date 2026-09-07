@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.util.Map;
 import java.util.Optional;
 
+import io.micrometer.core.instrument.Counter;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
@@ -44,8 +45,11 @@ class VisitController {
 
 	private final OwnerRepository owners;
 
-	public VisitController(OwnerRepository owners) {
+	private final Counter visitCreationCounter;
+
+	public VisitController(OwnerRepository owners, Counter visitCreationCounter) {
 		this.owners = owners;
+		this.visitCreationCounter = visitCreationCounter;
 	}
 
 	@InitBinder
@@ -107,6 +111,7 @@ class VisitController {
 
 		owner.addVisit(petId, visit);
 		this.owners.save(owner);
+		this.visitCreationCounter.increment();
 		redirectAttributes.addFlashAttribute("message", "Your visit has been booked");
 		return "redirect:/owners/{ownerId}";
 	}

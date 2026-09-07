@@ -3,6 +3,20 @@
 # Argo CD's '$values/<path>' convention — see application.yaml.
 
 prometheus:
+  ingress:
+    enabled: true
+    ingressClassName: alb
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+      alb.ingress.kubernetes.io/ssl-redirect: '443'
+      alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:069089526123:certificate/1e07d9fc-cb5f-4519-bfb9-9c550e446a4e"
+      alb.ingress.kubernetes.io/healthcheck-path: /-/healthy
+    paths:
+      - /
+    pathType: Prefix
+    hosts: []
   prometheusSpec:
     # Let ANY ServiceMonitor in ANY namespace be picked up (rather than
     # only ones carrying the chart's own release label) — needed so
@@ -11,8 +25,60 @@ prometheus:
     serviceMonitorSelectorNilUsesHelmValues: false
     serviceMonitorSelector: {}
     serviceMonitorNamespaceSelector: {}
+    # Discover PrometheusRule custom resources across all namespaces (dev, test, prod)
+    ruleSelectorNilUsesHelmValues: false
+    ruleSelector: {}
+    ruleNamespaceSelector: {}
     retention: 15d
 
 grafana:
-  adminPassword: "<REPLACE_ME_GRAFANA_ADMIN_PASSWORD>"   # move to an ExternalSecret before real use
+  adminPassword: "admin"   # Default admin password for UI access
   defaultDashboardsEnabled: true
+  ingress:
+    enabled: true
+    ingressClassName: alb
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+      alb.ingress.kubernetes.io/ssl-redirect: '443'
+      alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:069089526123:certificate/1e07d9fc-cb5f-4519-bfb9-9c550e446a4e"
+      alb.ingress.kubernetes.io/healthcheck-path: /api/health
+      alb.ingress.kubernetes.io/success-codes: "200,302"
+    path: /
+    pathType: Prefix
+    hosts: []
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: ALL
+
+alertmanager:
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      group_by: ['alertname', 'namespace', 'service', 'severity']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      receiver: 'null'
+      routes:
+        - match:
+            severity: critical
+          receiver: 'slack-notifications'
+          continue: true
+        - match:
+            severity: warning
+          receiver: 'slack-notifications'
+    receivers:
+      - name: 'null'
+      - name: 'slack-notifications'
+        slack_configs:
+          - channel: '#petclinic-alerts'
+            send_resolved: true
+            api_url: 'https://hooks.slack.com/services/REPLACE_ME/SLACK/WEBHOOK'
+            title: '{{ template "slack.default.title" . }}'
+            text: '{{ template "slack.default.text" . }}'

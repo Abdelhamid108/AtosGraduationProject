@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.micrometer.core.instrument.Counter;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -52,8 +53,11 @@ class OwnerController {
 
 	private final OwnerRepository owners;
 
-	public OwnerController(OwnerRepository owners) {
+	private final Counter ownerCreationCounter;
+
+	public OwnerController(OwnerRepository owners, Counter ownerCreationCounter) {
 		this.owners = owners;
+		this.ownerCreationCounter = ownerCreationCounter;
 	}
 
 	@InitBinder
@@ -82,6 +86,7 @@ class OwnerController {
 		}
 
 		this.owners.save(owner);
+		this.ownerCreationCounter.increment();
 		redirectAttributes.addFlashAttribute("message", "New Owner Created");
 		return "redirect:/owners/" + owner.getId();
 	}

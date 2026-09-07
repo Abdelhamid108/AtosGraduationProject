@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.micrometer.core.instrument.Counter;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -54,9 +55,12 @@ class PetController {
 
 	private final PetTypeRepository types;
 
-	public PetController(OwnerRepository owners, PetTypeRepository types) {
+	private final Counter petCreationCounter;
+
+	public PetController(OwnerRepository owners, PetTypeRepository types, Counter petCreationCounter) {
 		this.owners = owners;
 		this.types = types;
+		this.petCreationCounter = petCreationCounter;
 	}
 
 	@ModelAttribute("types")
@@ -124,6 +128,7 @@ class PetController {
 		try {
 			owner.addPet(pet);
 			this.owners.saveAndFlush(owner);
+			this.petCreationCounter.increment();
 		}
 		catch (DataIntegrityViolationException ex) {
 			if (!isDuplicatePetNameViolation(ex)) {
