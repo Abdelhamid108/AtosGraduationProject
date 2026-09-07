@@ -56,7 +56,7 @@ spec:
           imageName: 069089526123.dkr.ecr.us-east-1.amazonaws.com/petclinic-project/petclinitc-app:1.0.0
           commonUpdateSettings:
             updateStrategy: newest-build
-            allowTags: "regexp:^prod-.*$"
+            allowTags: "regexp:^v.*$"
             forceUpdate: true
           manifestTargets:
             helm:
