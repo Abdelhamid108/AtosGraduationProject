@@ -21,6 +21,7 @@ module "compute" {
   source = "./modules/compute"
 
   cluster_name              = var.cluster_name
+  aws_region                = var.aws_region
   vpc_id                    = module.vpc.vpc_id
   subnet_id                 = module.vpc.public_subnets[0]
   instance_type             = var.bastion_instance_type

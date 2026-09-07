@@ -13,8 +13,6 @@ data "aws_ami" "amazon_linux_2023" {
   }
 }
 
-data "aws_region" "current" {}
-
 resource "aws_instance" "bastione" {
   ami                         = data.aws_ami.amazon_linux_2023.id
   instance_type               = var.instance_type
@@ -36,7 +34,7 @@ resource "aws_instance" "bastione" {
 
               # Update and install required packages
               dnf update -y
-              dnf install -y git curl tar gzip jq
+              dnf install -y git tar gzip jq
 
               # Install kubectl
               KUBECTL_VERSION="$(curl -L -s https://dl.k8s.io/release/stable.txt)"
@@ -56,7 +54,7 @@ resource "aws_instance" "bastione" {
               su - ec2-user -c "git config --global --add safe.directory /home/ec2-user/AtosGraduationProject"
 
               # Pre-configure EKS kubeconfig for ec2-user
-              su - ec2-user -c "aws eks update-kubeconfig --name ${var.cluster_name} --region ${data.aws_region.current.name} || true"
+              su - ec2-user -c "aws eks update-kubeconfig --name ${var.cluster_name} --region ${var.aws_region} || true"
 
               # Bash aliases & auto-completion for kubectl
               for RC in /home/ec2-user/.bashrc /root/.bashrc; do
