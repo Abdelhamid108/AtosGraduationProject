@@ -53,4 +53,4 @@ resources:
     cpu: 500m
     memory: 512Mi
 rollout:
-  enabled: true    
+  enabled: true
