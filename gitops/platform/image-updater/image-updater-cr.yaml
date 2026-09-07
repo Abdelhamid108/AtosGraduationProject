@@ -14,7 +14,7 @@ spec:
         method: git
         gitConfig:
           branch: main
-          writeBackTarget: "helmvalues:gitops/workloads/dev/values.yaml"
+          writeBackTarget: "helmvalues:../../gitops/workloads/dev/values.yaml"
       images:
         - alias: petclinic
           imageName: 069089526123.dkr.ecr.us-east-1.amazonaws.com/petclinic-project/petclinitc-app:1.0.0
@@ -32,7 +32,7 @@ spec:
         method: git
         gitConfig:
           branch: main
-          writeBackTarget: "helmvalues:gitops/workloads/test/values.yaml"
+          writeBackTarget: "helmvalues:../../gitops/workloads/test/values.yaml"
       images:
         - alias: petclinic
           imageName: 069089526123.dkr.ecr.us-east-1.amazonaws.com/petclinic-project/petclinitc-app:1.0.0
@@ -50,7 +50,7 @@ spec:
         method: git
         gitConfig:
           branch: main
-          writeBackTarget: "helmvalues:gitops/workloads/prod/values.yaml"
+          writeBackTarget: "helmvalues:../../gitops/workloads/prod/values.yaml"
       images:
         - alias: petclinic
           imageName: 069089526123.dkr.ecr.us-east-1.amazonaws.com/petclinic-project/petclinitc-app:1.0.0
