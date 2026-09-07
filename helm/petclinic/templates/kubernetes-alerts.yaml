@@ -1,0 +1,106 @@
+{{- if .Values.monitoring.prometheusRules.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "petclinic.fullname" . }}-kubernetes-alerts
+  labels:
+    {{- include "petclinic.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: {{ include "petclinic.fullname" . }}.kubernetes-alerts
+      rules:
+        - alert: KubernetesPodCrashLooping
+          expr: max_over_time(kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"}[5m]) >= 1
+          for: 10m
+          labels:
+            severity: critical
+            namespace: '{{ "{{ $labels.namespace }}" }}'
+            pod: '{{ "{{ $labels.pod }}" }}'
+            container: '{{ "{{ $labels.container }}" }}'
+          annotations:
+            summary: Pod is crash looping
+            description: Pod {{ "{{ $labels.namespace }}" }}/{{ "{{ $labels.pod }}" }} container {{ "{{ $labels.container }}" }} is in CrashLoopBackOff.
+        - alert: KubernetesContainerRestarting
+          expr: increase(kube_pod_container_status_restarts_total[15m]) > {{ .Values.monitoring.alerts.containerRestartThreshold }}
+          for: 10m
+          labels:
+            severity: warning
+            namespace: '{{ "{{ $labels.namespace }}" }}'
+            pod: '{{ "{{ $labels.pod }}" }}'
+            container: '{{ "{{ $labels.container }}" }}'
+          annotations:
+            summary: Container restarting frequently
+            description: Container {{ "{{ $labels.container }}" }} in pod {{ "{{ $labels.namespace }}" }}/{{ "{{ $labels.pod }}" }} restarted more than {{ .Values.monitoring.alerts.containerRestartThreshold }} times in 15 minutes.
+        - alert: KubernetesPodNotReady
+          expr: kube_pod_status_ready{condition="false"} == 1
+          for: 15m
+          labels:
+            severity: warning
+            namespace: '{{ "{{ $labels.namespace }}" }}'
+            pod: '{{ "{{ $labels.pod }}" }}'
+          annotations:
+            summary: Pod is not ready
+            description: Pod {{ "{{ $labels.namespace }}" }}/{{ "{{ $labels.pod }}" }} has not been ready for 15 minutes.
+        - alert: KubernetesDeploymentReplicasMismatch
+          expr: kube_deployment_spec_replicas != kube_deployment_status_replicas_available
+          for: 15m
+          labels:
+            severity: warning
+            namespace: '{{ "{{ $labels.namespace }}" }}'
+            deployment: '{{ "{{ $labels.deployment }}" }}'
+          annotations:
+            summary: Deployment replicas mismatch
+            description: Deployment {{ "{{ $labels.namespace }}" }}/{{ "{{ $labels.deployment }}" }} does not have all desired replicas available.
+        - alert: KubernetesDeploymentGenerationMismatch
+          expr: kube_deployment_metadata_generation != kube_deployment_status_observed_generation
+          for: 15m
+          labels:
+            severity: warning
+            namespace: '{{ "{{ $labels.namespace }}" }}'
+            deployment: '{{ "{{ $labels.deployment }}" }}'
+          annotations:
+            summary: Deployment generation mismatch
+            description: Deployment {{ "{{ $labels.namespace }}" }}/{{ "{{ $labels.deployment }}" }} has not observed the latest generation.
+        - alert: KubernetesNodeHighCPU
+          expr: 100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) > {{ .Values.monitoring.alerts.nodeCpuPercent }}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Node CPU is high
+            description: Node {{ "{{ $labels.instance }}" }} CPU usage is above {{ .Values.monitoring.alerts.nodeCpuPercent }}% for 15 minutes.
+        - alert: KubernetesNodeHighMemory
+          expr: 100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > {{ .Values.monitoring.alerts.nodeMemoryPercent }}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Node memory is high
+            description: Node {{ "{{ $labels.instance }}" }} memory usage is above {{ .Values.monitoring.alerts.nodeMemoryPercent }}% for 15 minutes.
+        - alert: KubernetesContainerHighMemory
+          expr: |
+            max by (namespace, pod, container) (container_memory_working_set_bytes{container!="",image!=""})
+            /
+            max by (namespace, pod, container) (kube_pod_container_resource_limits{resource="memory",unit="byte"})
+            > {{ .Values.monitoring.alerts.containerMemoryLimitRatio }}
+          for: 15m
+          labels:
+            severity: warning
+            namespace: '{{ "{{ $labels.namespace }}" }}'
+            pod: '{{ "{{ $labels.pod }}" }}'
+            container: '{{ "{{ $labels.container }}" }}'
+          annotations:
+            summary: Container memory near limit
+            description: Container {{ "{{ $labels.container }}" }} in pod {{ "{{ $labels.namespace }}" }}/{{ "{{ $labels.pod }}" }} is using more than {{ .Values.monitoring.alerts.containerMemoryLimitRatio }} of its memory limit.
+        - alert: KubernetesContainerOOMKilled
+          expr: max_over_time(kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}[15m]) == 1
+          for: 5m
+          labels:
+            severity: critical
+            namespace: '{{ "{{ $labels.namespace }}" }}'
+            pod: '{{ "{{ $labels.pod }}" }}'
+            container: '{{ "{{ $labels.container }}" }}'
+          annotations:
+            summary: Container was OOMKilled
+            description: Container {{ "{{ $labels.container }}" }} in pod {{ "{{ $labels.namespace }}" }}/{{ "{{ $labels.pod }}" }} was killed because it exceeded memory.
+{{- end }}

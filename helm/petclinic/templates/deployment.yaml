@@ -53,9 +53,11 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: {{ .Values.service.targetPort }}
               protocol: TCP
           env:
+            - name: SERVER_PORT
+              value: {{ .Values.service.targetPort | quote }}
             - name: SPRING_PROFILES_ACTIVE
               value: mysql
             - name: MYSQL_URL
@@ -67,8 +69,6 @@ spec:
                 secretKeyRef:
                   name: {{ include "petclinic.mysql.secretName" . }}
                   key: mysql-password
-          # Spring Boot Actuator exposes Kubernetes-specific probes when
-          # management.endpoint.health.probes.enabled=true (set in application.properties).
           startupProbe:
             httpGet:
               path: /actuator/health/liveness

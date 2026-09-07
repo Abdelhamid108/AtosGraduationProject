@@ -1,0 +1,273 @@
+{{- if .Values.monitoring.grafanaDashboard.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "petclinic.fullname" . }}-grafana-dashboard
+  labels:
+    {{- include "petclinic.labels" . | nindent 4 }}
+    {{- with .Values.monitoring.grafanaDashboard.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+data:
+  petclinic-observability.json: |-
+    {
+      "uid": "petclinic-observability",
+      "title": "PetClinic Observability and SLO",
+      "tags": ["petclinic", "spring-boot", "kubernetes", "slo"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "30s",
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {
+        "refresh_intervals": ["10s", "30s", "1m", "5m", "15m"],
+        "time_options": ["5m", "15m", "1h", "6h", "24h", "7d", "30d"]
+      },
+      "templating": {
+        "list": [
+          {
+            "name": "namespace",
+            "type": "query",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": "label_values(kube_namespace_status_phase, namespace)",
+            "refresh": 1,
+            "includeAll": true,
+            "multi": true,
+            "current": { "selected": false, "text": "All", "value": "$__all" }
+          },
+          {
+            "name": "service",
+            "type": "query",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": "label_values(http_server_requests_seconds_count{namespace=~\"$namespace\"}, service)",
+            "refresh": 1,
+            "includeAll": true,
+            "multi": true,
+            "current": { "selected": false, "text": "All", "value": "$__all" }
+          },
+          {
+            "name": "pod",
+            "type": "query",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": "label_values(kube_pod_info{namespace=~\"$namespace\"}, pod)",
+            "refresh": 1,
+            "includeAll": true,
+            "multi": true,
+            "current": { "selected": false, "text": "All", "value": "$__all" }
+          },
+          {
+            "name": "container",
+            "type": "query",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": "label_values(kube_pod_container_info{namespace=~\"$namespace\", pod=~\"$pod\"}, container)",
+            "refresh": 1,
+            "includeAll": true,
+            "multi": true,
+            "current": { "selected": false, "text": "All", "value": "$__all" }
+          },
+          {
+            "name": "instance",
+            "type": "query",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": "label_values(up, instance)",
+            "refresh": 1,
+            "includeAll": true,
+            "multi": true,
+            "current": { "selected": false, "text": "All", "value": "$__all" }
+          }
+        ]
+      },
+      "panels": [
+        { "id": 1, "type": "row", "title": "Kubernetes Overview", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 } },
+        {
+          "id": 2,
+          "type": "timeseries",
+          "title": "Node CPU",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\", instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "{{`{{instance}}`}}" }],
+          "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 90 }] } }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 }
+        },
+        {
+          "id": 3,
+          "type": "timeseries",
+          "title": "Node Memory",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "100 * (1 - (node_memory_MemAvailable_bytes{instance=~\"$instance\"} / node_memory_MemTotal_bytes{instance=~\"$instance\"}))", "legendFormat": "{{`{{instance}}`}}" }],
+          "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 90 }] } }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 }
+        },
+        {
+          "id": 4,
+          "type": "timeseries",
+          "title": "Node Filesystem Free",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "100 * node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay\", instance=~\"$instance\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay\", instance=~\"$instance\"}", "legendFormat": "{{`{{instance}} {{mountpoint}}`}}" }],
+          "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 10 }, { "color": "green", "value": 20 }] } }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 }
+        },
+        {
+          "id": 5,
+          "type": "stat",
+          "title": "Pods Running",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum(kube_pod_status_phase{namespace=~\"$namespace\", phase=\"Running\"})", "legendFormat": "running" }],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "gridPos": { "h": 5, "w": 6, "x": 0, "y": 9 }
+        },
+        {
+          "id": 6,
+          "type": "stat",
+          "title": "Pods Pending",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum(kube_pod_status_phase{namespace=~\"$namespace\", phase=\"Pending\"})", "legendFormat": "pending" }],
+          "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] } }, "overrides": [] },
+          "gridPos": { "h": 5, "w": 6, "x": 6, "y": 9 }
+        },
+        {
+          "id": 7,
+          "type": "stat",
+          "title": "Pods Failed",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum(kube_pod_status_phase{namespace=~\"$namespace\", phase=\"Failed\"})", "legendFormat": "failed" }],
+          "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } }, "overrides": [] },
+          "gridPos": { "h": 5, "w": 6, "x": 12, "y": 9 }
+        },
+        {
+          "id": 8,
+          "type": "stat",
+          "title": "Container Restarts",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=~\"$namespace\", pod=~\"$pod\", container=~\"$container\"}[$__rate_interval]))", "legendFormat": "restarts" }],
+          "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] } }, "overrides": [] },
+          "gridPos": { "h": 5, "w": 6, "x": 18, "y": 9 }
+        },
+        { "id": 9, "type": "row", "title": "Application Overview", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 } },
+        {
+          "id": 10,
+          "type": "timeseries",
+          "title": "Request Rate",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum by (service) (rate(http_server_requests_seconds_count{namespace=~\"$namespace\", service=~\"$service\", uri!~\"/actuator.*\"}[$__rate_interval]))", "legendFormat": "{{`{{service}}`}}" }],
+          "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 15 }
+        },
+        {
+          "id": 11,
+          "type": "timeseries",
+          "title": "HTTP 5xx Rate",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum by (service) (rate(http_server_requests_seconds_count{namespace=~\"$namespace\", service=~\"$service\", uri!~\"/actuator.*\", status=~\"5..\"}[$__rate_interval]))", "legendFormat": "{{`{{service}}`}}" }],
+          "fieldConfig": { "defaults": { "unit": "reqps", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.1 }, { "color": "red", "value": 1 }] } }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 15 }
+        },
+        {
+          "id": 12,
+          "type": "timeseries",
+          "title": "HTTP Error Percentage",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum by (service) (rate(http_server_requests_seconds_count{namespace=~\"$namespace\", service=~\"$service\", uri!~\"/actuator.*\", status=~\"5..\"}[$__rate_interval])) / clamp_min(sum by (service) (rate(http_server_requests_seconds_count{namespace=~\"$namespace\", service=~\"$service\", uri!~\"/actuator.*\"}[$__rate_interval])), 0.000001)", "legendFormat": "{{`{{service}}`}}" }],
+          "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.001 }, { "color": "red", "value": 0.01 }] } }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 15 }
+        },
+        {
+          "id": 13,
+          "type": "timeseries",
+          "title": "Latency Percentiles",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            { "expr": "histogram_quantile(0.50, sum by (le, service) (rate(http_server_requests_seconds_bucket{namespace=~\"$namespace\", service=~\"$service\", uri!~\"/actuator.*\"}[$__rate_interval])))", "legendFormat": "p50 {{`{{service}}`}}" },
+            { "expr": "histogram_quantile(0.95, sum by (le, service) (rate(http_server_requests_seconds_bucket{namespace=~\"$namespace\", service=~\"$service\", uri!~\"/actuator.*\"}[$__rate_interval])))", "legendFormat": "p95 {{`{{service}}`}}" },
+            { "expr": "histogram_quantile(0.99, sum by (le, service) (rate(http_server_requests_seconds_bucket{namespace=~\"$namespace\", service=~\"$service\", uri!~\"/actuator.*\"}[$__rate_interval])))", "legendFormat": "p99 {{`{{service}}`}}" }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 23 }
+        },
+        {
+          "id": 14,
+          "type": "timeseries",
+          "title": "JVM Heap",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum by (area, id) (jvm_memory_used_bytes{namespace=~\"$namespace\", pod=~\"$pod\", area=\"heap\"})", "legendFormat": "{{`{{id}}`}}" }],
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 23 }
+        },
+        {
+          "id": 15,
+          "type": "timeseries",
+          "title": "JVM GC Pause Rate",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum by (action, cause) (rate(jvm_gc_pause_seconds_count{namespace=~\"$namespace\", pod=~\"$pod\"}[$__rate_interval]))", "legendFormat": "{{`{{action}} {{cause}}`}}" }],
+          "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+          "gridPos": { "h": 7, "w": 12, "x": 0, "y": 31 }
+        },
+        {
+          "id": 16,
+          "type": "timeseries",
+          "title": "JVM Threads",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum by (state) (jvm_threads_states_threads{namespace=~\"$namespace\", pod=~\"$pod\"})", "legendFormat": "{{`{{state}}`}}" }],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "gridPos": { "h": 7, "w": 12, "x": 12, "y": 31 }
+        },
+        { "id": 17, "type": "row", "title": "Availability SLO", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 38 } },
+        {
+          "id": 18,
+          "type": "stat",
+          "title": "SLO Target",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "service:http_availability:target", "legendFormat": "target" }],
+          "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+          "gridPos": { "h": 5, "w": 4, "x": 0, "y": 39 }
+        },
+        {
+          "id": 19,
+          "type": "stat",
+          "title": "Current Availability",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "service:http_availability:ratio5m{namespace=~\"$namespace\", service=~\"$service\"}", "legendFormat": "{{`{{service}}`}}" }],
+          "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.99 }, { "color": "green", "value": 0.999 }] } }, "overrides": [] },
+          "gridPos": { "h": 5, "w": 5, "x": 4, "y": 39 }
+        },
+        {
+          "id": 20,
+          "type": "stat",
+          "title": "Error Budget",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "service:http_error_budget:ratio", "legendFormat": "allowed" }],
+          "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+          "gridPos": { "h": 5, "w": 5, "x": 9, "y": 39 }
+        },
+        {
+          "id": 21,
+          "type": "stat",
+          "title": "Error Budget Remaining",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "service:http_availability:error_budget_remaining5m{namespace=~\"$namespace\", service=~\"$service\"}", "legendFormat": "{{`{{service}}`}}" }],
+          "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.25 }, { "color": "green", "value": 0.5 }] } }, "overrides": [] },
+          "gridPos": { "h": 5, "w": 5, "x": 14, "y": 39 }
+        },
+        {
+          "id": 22,
+          "type": "stat",
+          "title": "SLO Alerts Firing",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum(ALERTS{namespace=~\"$namespace\", slo=\"availability\", alertstate=\"firing\"})", "legendFormat": "firing" }],
+          "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } }, "overrides": [] },
+          "gridPos": { "h": 5, "w": 5, "x": 19, "y": 39 }
+        },
+        {
+          "id": 23,
+          "type": "timeseries",
+          "title": "Burn Rate",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            { "expr": "service:http_availability:burn_rate5m{namespace=~\"$namespace\", service=~\"$service\"}", "legendFormat": "5m {{`{{service}}`}}" },
+            { "expr": "service:http_availability:burn_rate1h{namespace=~\"$namespace\", service=~\"$service\"}", "legendFormat": "1h {{`{{service}}`}}" }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short", "custom": { "axisLabel": "x" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "orange", "value": 2 }, { "color": "red", "value": 14.4 }] } }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 44 }
+        }
+      ]
+    }
+{{- end }}

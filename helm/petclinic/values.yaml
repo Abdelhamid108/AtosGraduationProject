@@ -41,6 +41,7 @@ securityContext:
 service:
   type: ClusterIP
   port: 8080
+  targetPort: 8080
 
 ingress:
   enabled: false
@@ -74,12 +75,147 @@ podDisruptionBudget:
 
 serviceMonitor:
   # Requires the Prometheus Operator CRDs to be installed in the cluster.
-  enabled: false
+  enabled: true
   namespace: ""
-  interval: 30s
+  interval: 15s
   scrapeTimeout: 10s
   path: /actuator/prometheus
   labels: {}
+
+monitoring:
+  prometheusRules:
+    enabled: true
+  grafanaDashboard:
+    enabled: true
+    labels:
+      grafana_dashboard: "1"
+  slo:
+    availabilityTarget: 0.999
+    errorBudgetRatio: 0.001
+    latencyP99Seconds: 1
+    fastBurnRateThreshold: 14.4
+    slowBurnRateThreshold: 6
+  alerts:
+    httpErrorRatioThreshold: 0.001
+    availabilityThreshold: 0.999
+    containerRestartThreshold: 3
+    nodeCpuPercent: 85
+    nodeMemoryPercent: 85
+    containerMemoryLimitRatio: 0.9
+
+kube-prometheus-stack:
+  # Keep the dependency available for standalone installs, but leave it disabled
+  # by default because this repository already deploys the platform monitoring
+  # stack from gitops/platform/monitoring. Running two Prometheus Operators in
+  # the cluster makes them reconcile each other's Prometheus resources.
+  enabled: false
+  crds:
+    enabled: true
+  defaultRules:
+    create: true
+  kubeStateMetrics:
+    enabled: true
+  nodeExporter:
+    enabled: true
+  kubelet:
+    enabled: true
+    serviceMonitor:
+      cAdvisor: true
+  prometheus-node-exporter:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+  kube-state-metrics:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+  prometheus:
+    ingress:
+      enabled: false
+    service:
+      type: ClusterIP
+    prometheusSpec:
+      scrapeInterval: 15s
+      evaluationInterval: 30s
+      retention: 30d
+      externalLabels:
+        cluster: petclinic-cluster
+      serviceMonitorSelectorNilUsesHelmValues: false
+      serviceMonitorSelector: {}
+      serviceMonitorNamespaceSelector: {}
+      podMonitorSelectorNilUsesHelmValues: false
+      podMonitorSelector: {}
+      podMonitorNamespaceSelector: {}
+      ruleSelectorNilUsesHelmValues: false
+      ruleSelector: {}
+      ruleNamespaceSelector: {}
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 20Gi
+      resources:
+        requests:
+          cpu: 250m
+          memory: 1Gi
+        limits:
+          cpu: "1"
+          memory: 2Gi
+  alertmanager:
+    enabled: true
+    ingress:
+      enabled: false
+    service:
+      type: ClusterIP
+    config:
+      global:
+        resolve_timeout: 5m
+      route:
+        group_by:
+          - alertname
+          - namespace
+          - service
+          - severity
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 4h
+        receiver: default
+      receivers:
+        - name: default
+  grafana:
+    enabled: true
+    defaultDashboardsEnabled: true
+    ingress:
+      enabled: false
+    service:
+      type: ClusterIP
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        labelValue: "1"
+        searchNamespace: ALL
+      datasources:
+        enabled: true
+        defaultDatasourceEnabled: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
 
 networkPolicy:
   enabled: true

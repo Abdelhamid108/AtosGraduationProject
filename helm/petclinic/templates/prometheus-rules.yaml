@@ -1,0 +1,114 @@
+{{- if .Values.monitoring.prometheusRules.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "petclinic.fullname" . }}-sli-slo
+  labels:
+    {{- include "petclinic.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: {{ include "petclinic.fullname" . }}.spring-boot-sli
+      interval: 30s
+      rules:
+        - record: service:http_requests:rate5m
+          expr: |
+            sum by (namespace, service) (
+              rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[5m])
+            )
+        - record: service:http_errors:rate5m
+          expr: |
+            sum by (namespace, service) (
+              rate(http_server_requests_seconds_count{uri!~"/actuator.*",status=~"5.."}[5m])
+            )
+        - record: service:http_error_ratio:rate5m
+          expr: |
+            service:http_errors:rate5m
+            /
+            clamp_min(service:http_requests:rate5m, 0.000001)
+        - record: service:http_error_ratio:rate1h
+          expr: |
+            sum by (namespace, service) (
+              rate(http_server_requests_seconds_count{uri!~"/actuator.*",status=~"5.."}[1h])
+            )
+            /
+            clamp_min(
+              sum by (namespace, service) (
+                rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[1h])
+              ),
+              0.000001
+            )
+        - record: service:http_error_ratio:rate30m
+          expr: |
+            sum by (namespace, service) (
+              rate(http_server_requests_seconds_count{uri!~"/actuator.*",status=~"5.."}[30m])
+            )
+            /
+            clamp_min(
+              sum by (namespace, service) (
+                rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[30m])
+              ),
+              0.000001
+            )
+        - record: service:http_error_ratio:rate6h
+          expr: |
+            sum by (namespace, service) (
+              rate(http_server_requests_seconds_count{uri!~"/actuator.*",status=~"5.."}[6h])
+            )
+            /
+            clamp_min(
+              sum by (namespace, service) (
+                rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[6h])
+              ),
+              0.000001
+            )
+        - record: service:http_availability:ratio5m
+          expr: |
+            1 - service:http_error_ratio:rate5m
+        - record: service:http_availability:target
+          expr: |
+            vector({{ .Values.monitoring.slo.availabilityTarget }})
+        - record: service:http_error_budget:ratio
+          expr: |
+            vector({{ .Values.monitoring.slo.errorBudgetRatio }})
+        - record: service:http_availability:error_budget_remaining5m
+          expr: |
+            clamp_min(1 - (service:http_error_ratio:rate5m / {{ .Values.monitoring.slo.errorBudgetRatio }}), 0)
+        # Burn rate is actual error ratio divided by the allowed error ratio.
+        # For a 99.9% availability SLO, 0.001 is the sustainable error rate.
+        - record: service:http_availability:burn_rate5m
+          expr: |
+            service:http_error_ratio:rate5m / {{ .Values.monitoring.slo.errorBudgetRatio }}
+        - record: service:http_availability:burn_rate1h
+          expr: |
+            service:http_error_ratio:rate1h / {{ .Values.monitoring.slo.errorBudgetRatio }}
+        - record: service:http_availability:burn_rate30m
+          expr: |
+            service:http_error_ratio:rate30m / {{ .Values.monitoring.slo.errorBudgetRatio }}
+        - record: service:http_availability:burn_rate6h
+          expr: |
+            service:http_error_ratio:rate6h / {{ .Values.monitoring.slo.errorBudgetRatio }}
+        - record: service:http_latency:p50_5m
+          expr: |
+            histogram_quantile(
+              0.50,
+              sum by (le, namespace, service) (
+                rate(http_server_requests_seconds_bucket{uri!~"/actuator.*"}[5m])
+              )
+            )
+        - record: service:http_latency:p95_5m
+          expr: |
+            histogram_quantile(
+              0.95,
+              sum by (le, namespace, service) (
+                rate(http_server_requests_seconds_bucket{uri!~"/actuator.*"}[5m])
+              )
+            )
+        - record: service:http_latency:p99_5m
+          expr: |
+            histogram_quantile(
+              0.99,
+              sum by (le, namespace, service) (
+                rate(http_server_requests_seconds_bucket{uri!~"/actuator.*"}[5m])
+              )
+            )
+{{- end }}
