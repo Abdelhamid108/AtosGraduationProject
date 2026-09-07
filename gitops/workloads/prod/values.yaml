@@ -55,3 +55,5 @@ resources:
   limits:
     cpu: "1"
     memory: 1Gi
+rollout:
+  enabled: true
