@@ -3,10 +3,9 @@ groups:
     interval: 30s
 
     rules:
-
-      # =========================
-      # Traffic
-      # =========================
+      # ============================================================
+      # TOTAL HTTP REQUEST RATE
+      # ============================================================
       - record: service:http_requests:rate5m
         expr: |
           sum(
@@ -17,9 +16,9 @@ groups:
             )
           )
 
-      # =========================
-      # 5xx errors
-      # =========================
+      # ============================================================
+      # 5XX ERROR RATE
+      # ============================================================
       - record: service:http_errors:rate5m
         expr: |
           sum(
@@ -31,9 +30,12 @@ groups:
             )
           )
 
-      # =========================
-      # Error percentage
-      # =========================
+      # ============================================================
+      # ERROR RATIO
+      #
+      # Example:
+      # 0.002 = 0.2%
+      # ============================================================
       - record: service:http_error_ratio:rate5m
         expr: |
           (
@@ -56,18 +58,102 @@ groups:
           )
           or vector(0)
 
-      # =========================
-      # Availability
-      # =========================
+      # ============================================================
+      # AVAILABILITY SLI
+      #
+      # 1 - error ratio
+      #
+      # 0.999 = 99.9%
+      # ============================================================
       - record: service:http_availability:ratio5m
         expr: |
-          1 -
+          (
+            1 -
+            (
+              sum(
+                rate(
+                  http_server_requests_seconds_count{
+                    uri!~"/actuator.*",
+                    status=~"5.."
+                  }[5m]
+                )
+              )
+              /
+              sum(
+                rate(
+                  http_server_requests_seconds_count{
+                    uri!~"/actuator.*"
+                  }[5m]
+                )
+              )
+            )
+          )
+          or vector(1)
+
+      # ============================================================
+      # LATENCY P50
+      # ============================================================
+      - record: service:http_latency:p50_5m
+        expr: |
+          histogram_quantile(
+            0.50,
+            sum(
+              rate(
+                http_server_requests_seconds_bucket{
+                  uri!~"/actuator.*"
+                }[5m]
+              )
+            ) by (le)
+          )
+
+      # ============================================================
+      # LATENCY P95
+      # ============================================================
+      - record: service:http_latency:p95_5m
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(
+              rate(
+                http_server_requests_seconds_bucket{
+                  uri!~"/actuator.*"
+                }[5m]
+              )
+            ) by (le)
+          )
+
+      # ============================================================
+      # LATENCY P99
+      # ============================================================
+      - record: service:http_latency:p99_5m
+        expr: |
+          histogram_quantile(
+            0.99,
+            sum(
+              rate(
+                http_server_requests_seconds_bucket{
+                  uri!~"/actuator.*"
+                }[5m]
+              )
+            ) by (le)
+          )
+
+      # ============================================================
+      # LATENCY SLI
+      #
+      # Percentage of requests <= 1 second
+      #
+      # IMPORTANT:
+      # Your Spring Boot histogram must have a 1.0 second bucket.
+      # ============================================================
+      - record: service:http_latency_good_ratio:ratio5m
+        expr: |
           (
             sum(
               rate(
-                http_server_requests_seconds_count{
+                http_server_requests_seconds_bucket{
                   uri!~"/actuator.*",
-                  status=~"5.."
+                  le="1.0"
                 }[5m]
               )
             )
@@ -82,50 +168,59 @@ groups:
           )
           or vector(1)
 
-      # =========================
-      # P50 latency
-      # =========================
-      - record: service:http_latency:p50_5m
+      # ============================================================
+      # LATENCY BAD RATIO
+      #
+      # Percentage of requests > 1 second
+      # ============================================================
+      - record: service:http_latency_bad_ratio:ratio5m
         expr: |
-          histogram_quantile(
-            0.50,
-            sum(
-              rate(
-                http_server_requests_seconds_bucket{
-                  uri!~"/actuator.*"
-                }[5m]
-              )
-            ) by (le)
+          (
+            1 - service:http_latency_good_ratio:ratio5m
           )
 
-      # =========================
-      # P95 latency
-      # =========================
-      - record: service:http_latency:p95_5m
+      # ============================================================
+      # AVAILABILITY ERROR BUDGET
+      #
+      # 99.9% availability => 0.1% error budget
+      # ============================================================
+      - record: service:http_availability_error_budget:ratio
         expr: |
-          histogram_quantile(
-            0.95,
-            sum(
-              rate(
-                http_server_requests_seconds_bucket{
-                  uri!~"/actuator.*"
-                }[5m]
-              )
-            ) by (le)
+          1 - 0.999
+
+      # ============================================================
+      # AVAILABILITY ERROR BUDGET REMAINING
+      #
+      # 1.0 = 100% budget remaining
+      # 0.5 = 50% remaining
+      # 0.0 = exhausted
+      # ============================================================
+      - record: service:http_availability_error_budget_remaining:ratio5m
+        expr: |
+          1 -
+          (
+            service:http_error_ratio:rate5m
+            /
+            service:http_availability_error_budget:ratio
           )
 
-      # =========================
-      # P99 latency
-      # =========================
-      - record: service:http_latency:p99_5m
+      # ============================================================
+      # LATENCY ERROR BUDGET
+      #
+      # 95% good => 5% allowed to exceed 1 sec
+      # ============================================================
+      - record: service:http_latency_error_budget:ratio
         expr: |
-          histogram_quantile(
-            0.99,
-            sum(
-              rate(
-                http_server_requests_seconds_bucket{
-                  uri!~"/actuator.*"
-                }[5m]
-              )
-            ) by (le)
+          1 - 0.95
+
+      # ============================================================
+      # LATENCY ERROR BUDGET REMAINING
+      # ============================================================
+      - record: service:http_latency_error_budget_remaining:ratio5m
+        expr: |
+          1 -
+          (
+            service:http_latency_bad_ratio:ratio5m
+            /
+            service:http_latency_error_budget:ratio
           )
