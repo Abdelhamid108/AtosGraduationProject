@@ -18,7 +18,7 @@ spec:
       valuesObject:
         settings:
           clusterName: "atos-eks-cluster"
-          interruptionQueue: "atos-eks-cluster-karpenter"
+          interruptionQueue: "Karpenter-atos-eks-cluster"
         serviceAccount:
           create: true
           name: karpenter

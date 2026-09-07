@@ -7,6 +7,10 @@ module "karpenter" {
 
   cluster_name = module.eks.cluster_name
 
+  # Deterministic node IAM role name to prevent random suffixes across deploy/destroy
+  node_iam_role_use_name_prefix = false
+  node_iam_role_name            = "Karpenter-${var.cluster_name}"
+
   namespace                       = "karpenter"
   create_pod_identity_association = true
   create_access_entry             = true

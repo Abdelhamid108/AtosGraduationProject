@@ -46,7 +46,7 @@ spec:
   amiFamily: AL2023
   amiSelectorTerms:
     - alias: "al2023@latest"
-  role: "KarpenterNodeRole-atos-eks-cluster"
+  role: "Karpenter-atos-eks-cluster"
   subnetSelectorTerms:
     - tags:
         karpenter.sh/discovery: "atos-eks-cluster"
