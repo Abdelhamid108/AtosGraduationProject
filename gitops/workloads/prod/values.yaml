@@ -6,7 +6,7 @@ workloadType: Deployment
 replicaCount: 3
 image:
   repository: "069089526123.dkr.ecr.us-east-1.amazonaws.com/petclinic-project/petclinitc-app"
-  tag: "prod-v1.0.6"
+  tag: "prod-v1.0.7"
 service:
   type: ClusterIP
   port: 80
