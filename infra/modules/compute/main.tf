@@ -13,6 +13,8 @@ data "aws_ami" "amazon_linux_2023" {
   }
 }
 
+data "aws_region" "current" {}
+
 resource "aws_instance" "bastione" {
   ami                         = data.aws_ami.amazon_linux_2023.id
   instance_type               = var.instance_type
@@ -30,27 +32,39 @@ resource "aws_instance" "bastione" {
 
   user_data = <<-EOF
               #!/bin/bash
+              set -euxo pipefail
+
+              # Update and install required packages
               dnf update -y
               dnf install -y git curl tar gzip jq
 
               # Install kubectl
-              curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+              KUBECTL_VERSION="$(curl -L -s https://dl.k8s.io/release/stable.txt)"
+              curl -LO "https://dl.k8s.io/release/$${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
               chmod +x ./kubectl
               mv ./kubectl /usr/local/bin/kubectl
 
               # Install Helm 3
               curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-	            # install Git
-	            yum install git -y || true 
-              
-              # clone repo
+              # Clone repo directly as ec2-user so ownership and permissions are correct
+              su - ec2-user -c "git clone https://github.com/Abdelhamid108/AtosGraduationProject.git /home/ec2-user/AtosGraduationProject || true"
+              chown -R ec2-user:ec2-user /home/ec2-user/AtosGraduationProject
+              chmod -R u+rwX /home/ec2-user/AtosGraduationProject
 
-	            git clone https://github.com/Abdelhamid108/AtosGraduationProject.git /home/ec2-user/AtosGraduationProject || true
-              
-              # Alias for convenience
-              echo "alias k=kubectl" >> /home/ec2-user/.bashrc
-              echo "alias k=kubectl" >> /root/.bashrc
+              # Prevent git 'dubious ownership' errors
+              su - ec2-user -c "git config --global --add safe.directory /home/ec2-user/AtosGraduationProject"
+
+              # Pre-configure EKS kubeconfig for ec2-user
+              su - ec2-user -c "aws eks update-kubeconfig --name ${var.cluster_name} --region ${data.aws_region.current.name} || true"
+
+              # Bash aliases & auto-completion for kubectl
+              for RC in /home/ec2-user/.bashrc /root/.bashrc; do
+                echo "alias k=kubectl" >> "$RC"
+                echo "source <(kubectl completion bash)" >> "$RC"
+                echo "complete -o default -F __start_kubectl k" >> "$RC"
+              done
+              chown ec2-user:ec2-user /home/ec2-user/.bashrc
               EOF
 
   tags = {
