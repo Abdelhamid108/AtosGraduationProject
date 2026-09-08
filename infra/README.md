@@ -49,7 +49,7 @@ flowchart TB
     Bastion -->|"SSM Agent Polling Egress"| IGW
 ```
 
-For complete technical specifications, see [docs/architecture.md](docs/architecture.md).
+For complete technical specifications, see [../docs/infrastructure.md](../docs/infrastructure.md).
 
 ---
 
@@ -97,16 +97,6 @@ AtosGraduationProject-infra/
 │       ├── karpenter.tf
 │       ├── variables.tf
 │       └── outputs.tf
-└── docs/
-    ├── architecture.md          # Comprehensive architectural specification
-    └── troubleshooting/         # Architectural knowledge base & design decisions
-        ├── README.md
-        ├── 01-private-cluster-control-plane-and-bastion-architecture.md
-        ├── 02-eks-pod-identity-and-addon-lifecycle-architecture.md
-        ├── 03-kubernetes-rbac-and-declarative-access-entries-architecture.md
-        ├── 04-multi-az-subnet-topology-and-load-balancer-discovery.md
-        ├── 05-temporary-credentials-and-dynamic-role-delegation.md
-        └── 06-karpenter-autoscaling-and-spot-interruption-architecture.md
 ```
 
 ---
@@ -231,14 +221,14 @@ kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-ebs-csi-driver
 
 Detailed architectural decisions, networking flows, and security designs:
 
-- **[Architecture 01: Private Control Plane & Zero-Trust Bastion](docs/troubleshooting/01-private-cluster-control-plane-and-bastion-architecture.md)** — Private API isolation, elimination of port 22 SSH, and SSM WebSocket routing.
-- **[Architecture 02: EKS Pod Identity & Addon Lifecycle](docs/troubleshooting/02-eks-pod-identity-and-addon-lifecycle-architecture.md)** — Native Pod Identity vs legacy IRSA, and `before_compute` addon ordering.
-- **[Architecture 03: Kubernetes RBAC & EKS Access Entries](docs/troubleshooting/03-kubernetes-rbac-and-declarative-access-entries-architecture.md)** — Declarative Access Entry API and IAM role mapping to `AmazonEKSClusterAdminPolicy`.
-- **[Architecture 04: Multi-AZ Subnet Topology & Load Balancer Discovery](docs/troubleshooting/04-multi-az-subnet-topology-and-load-balancer-discovery.md)** — Subnet allocation and discovery tagging for AWS Load Balancer Controller.
-- **[Architecture 05: Temporary Credentials & Dynamic Role Delegation](docs/troubleshooting/05-temporary-credentials-and-dynamic-role-delegation.md)** — Ephemeral AWS STS sessions (`ASIA...`), zero permanent keys, and dynamic `assume_role` provider delegation.
-- **[Architecture 06: Karpenter Autoscaling & Spot Interruption](docs/troubleshooting/06-karpenter-autoscaling-and-spot-interruption-architecture.md)** — Karpenter controller Pod Identity, Subnet/SG discovery, Node Access Entries, and SQS EventBridge interruption queue.
+- **[Architecture 01: Private Control Plane & Zero-Trust Bastion](../docs/troubleshooting/01-private-cluster-control-plane-and-bastion-architecture.md)** — Private API isolation, elimination of port 22 SSH, and SSM WebSocket routing.
+- **[Architecture 02: EKS Pod Identity & Addon Lifecycle](../docs/troubleshooting/02-eks-pod-identity-and-addon-lifecycle-architecture.md)** — Native Pod Identity vs legacy IRSA, and `before_compute` addon ordering.
+- **[Architecture 03: Kubernetes RBAC & EKS Access Entries](../docs/troubleshooting/03-kubernetes-rbac-and-declarative-access-entries-architecture.md)** — Declarative Access Entry API and IAM role mapping to `AmazonEKSClusterAdminPolicy`.
+- **[Architecture 04: Multi-AZ Subnet Topology & Load Balancer Discovery](../docs/troubleshooting/04-multi-az-subnet-topology-and-load-balancer-discovery.md)** — Subnet allocation and discovery tagging for AWS Load Balancer Controller.
+- **[Architecture 05: Temporary Credentials & Dynamic Role Delegation](../docs/troubleshooting/05-temporary-credentials-and-dynamic-role-delegation.md)** — Ephemeral AWS STS sessions (`ASIA...`), zero permanent keys, and dynamic `assume_role` provider delegation.
+- **[Architecture 06: Karpenter Autoscaling & Spot Interruption](../docs/troubleshooting/06-karpenter-autoscaling-and-spot-interruption-architecture.md)** — Karpenter controller Pod Identity, Subnet/SG discovery, Node Access Entries, and SQS EventBridge interruption queue.
 
-Explore the full index in [docs/troubleshooting/README.md](docs/troubleshooting/README.md).
+Explore the full index in [../docs/troubleshooting/README.md](../docs/troubleshooting/README.md).
 
 ---
 
