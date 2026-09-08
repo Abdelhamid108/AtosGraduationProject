@@ -173,3 +173,24 @@ flowchart TD
 ### 5.3 Distributed S3 Version Registry
 - **Location**: `s3://petclinic-platform-version-registry-069089526123-us-east-1-an/version-registry.json`
 - **Mechanism**: The `version_manager` step parses the JSON registry. If a proposed version tag already exists in the promotion history, the build halts to prevent overwriting existing release artifacts.
+
+---
+
+## 6. Terraform Infrastructure Pipeline Governance
+
+Located in [`pipelines_templates/AtosGradProj/terraform/Jenkinsfile`](file:///home/devops/Atos/JTE/pipelines_templates/AtosGradProj/terraform/Jenkinsfile), this pipeline governs AWS infrastructure lifecycle actions with policy gates and artifact archiving:
+
+### 6.1 Lifecycle Stage Differentiation (`ACTION = apply` vs `ACTION = destroy`)
+- **`apply` Workflow**:
+  1. `Terraform Init`: Reconfigures S3 state backend under `assumeRole`.
+  2. `Lint & Validate`: Executes `terraform fmt -check` and `terraform validate`.
+  3. `Security Policy Gate`: Runs Checkov SAST scan across `infra/` to detect security misconfigurations before planning.
+  4. `Terraform Plan`: Generates a speculative plan binary (`tfplan-<BUILD_ID>.tfplan`), renders the plan diff text, and archives both as Jenkins artifacts.
+  5. `Approval Guardrail`: Pauses for manual human review on branch `main`.
+  6. `Execute`: Runs `deploy()` strictly against the stashed plan binary, exports outputs (`terraform output -json > terraform-output.json`), and archives `terraform-output.json` and `terraform-output.txt` as build artifacts.
+- **`destroy` Fast-Path Workflow**:
+  1. `Terraform Init`: Initializes backend and provider plugins.
+  2. **Bypassed Stages**: `Lint & Validate`, `Security Policy Gate` (Checkov), and `Terraform Plan` are completely skipped to prevent unneeded scanning or plan mismatches.
+  3. `Approval Guardrail`: Prompts for explicit human destruction confirmation (`Approve Terraform DESTROY Infrastructure ?`).
+  4. `Execute`: Runs `destroy()` (`terraform destroy -auto-approve`) directly using credential `petclinic-tfvars`.
+

@@ -84,7 +84,7 @@ The documentation is organized into focused, single-file technical guides per do
 6. [**SRE Observability, SLO Framework & Error Budget Alerting (`docs/sre-observability.md`)**](sre-observability.md)
    99.9% Availability SLO mathematical formulation (rolling 30-day window, 43.2 minutes error budget), Google SRE Multi-Window Multi-Burn-Rate alerting math (14.4x fast burn, 6x slow burn), Prometheus recording rules, and Grafana dashboards (SLO Error Budget & Golden Signals).
 7. [**Future Roadmap, Technical Debt & Unimplemented Improvements (`docs/future-roadmap-and-improvements.md`)**](future-roadmap-and-improvements.md)
-   Detailed, step-by-step implementation blueprints for planned enhancements: ephemeral PR preview environments via Argo CD ApplicationSet, dedicated prod/non-prod cluster separation, dynamic Fargate/Kubernetes Jenkins agents, AWS Client VPN, automated k6 load testing, AWS WAF, Prometheus remote-write, automated pipeline canary rollback hooks, Infracost FinOps PR cost guardrails, ephemeral sandbox infrastructure provisioning (`terraform apply` validation), and automated scheduled infrastructure drift detection and reconciliation jobs.
+   Detailed, step-by-step implementation blueprints prioritized by impact and blast-radius: Prod vs. Non-Prod cluster isolation, GitHub governance & branch/tag RBAC with HMAC webhooks, automated pipeline canary rollback hooks, scheduled infrastructure drift detection, AWS WAF & Zero-Trust NetworkPolicies, ephemeral sandbox `terraform apply` validation, ephemeral PR preview environments via Argo CD ApplicationSet, dynamic Kubernetes/Fargate Jenkins agents, Infracost FinOps PR guardrails, Prometheus long-term storage (AWS AMP), automated load/chaos testing, AWS Client VPN, and empirical resource rightsizing.
 
 ---
 
@@ -113,6 +113,7 @@ Actionable diagnostic runbooks covering observed production failure scenarios:
 - [**Runbook 07: ACM Certificates & ALB HTTPS Redirection**](troubleshooting/07-acm-certificates-and-https-redirection.md)
 - [**Runbook 08: PrometheusRule CoreOS Webhook Validation Denials**](troubleshooting/08-prometheus-rule-validation-and-webhook-denials.md)
 - [**Runbook 09: Argo Rollouts Canary Degradation & Emergency Rollback**](troubleshooting/09-argo-rollouts-canary-degradation-and-rollback.md)
+- [**Runbook 10: Argo CD Sync Waves, CRD Ordering & Dependency Race Conditions**](troubleshooting/10-argocd-sync-waves-and-crd-race-conditions.md)
 
 ---
 

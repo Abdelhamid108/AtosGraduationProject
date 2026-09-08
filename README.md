@@ -70,9 +70,9 @@ AtosGraduationProject/
     ├── gitops.md            # App-of-Apps, promotion cycle & Argo Rollouts canary
     ├── cicd-governance.md   # Jenkins JTE pipeline architecture & security gates
     ├── sre-observability.md # 99.9% SLO formulation, Multi-Burn-Rate alerting & PromQL
-    ├── future-roadmap-and-improvements.md # 12 Blueprints for future enhancements
+    ├── future-roadmap-and-improvements.md # 13 Prioritized blueprints for future enhancements
     ├── decisions/           # Architecture Decision Records (ADRs 001 to 007)
-    └── troubleshooting/     # Central Operational Diagnostics & Runbooks (01 to 09)
+    └── troubleshooting/     # Central Operational Diagnostics & Runbooks (01 to 10)
 ```
 
 ---
@@ -340,6 +340,6 @@ For detailed architectural designs, deep-dive specifications, runbooks, and deci
 | [**docs/gitops.md**](docs/gitops.md) | Argo CD App-of-Apps, multi-environment promotion, and 5-step Canary Rollouts |
 | [**docs/cicd-governance.md**](docs/cicd-governance.md) | Jenkins JTE architecture, step catalog, SonarQube gates, and ECR retagging |
 | [**docs/sre-observability.md**](docs/sre-observability.md) | 99.9% SLO formulation, Google SRE Multi-Burn-Rate alerting, and PromQL runbook |
-| [**docs/future-roadmap-and-improvements.md**](docs/future-roadmap-and-improvements.md) | 12 technical implementation blueprints for future enhancements and FinOps |
+| [**docs/future-roadmap-and-improvements.md**](docs/future-roadmap-and-improvements.md) | 13 prioritized technical implementation blueprints for future enhancements and FinOps |
 | [**docs/decisions/ (ADRs)**](docs/decisions/README.md) | Architecture Decision Records (ADRs 001 through 007) |
-| [**docs/troubleshooting/ (Runbooks)**](docs/troubleshooting/README.md) | Operational Diagnostics & Runbooks (01 through 09) |
+| [**docs/troubleshooting/ (Runbooks)**](docs/troubleshooting/README.md) | Operational Diagnostics & Runbooks (01 through 10) |
